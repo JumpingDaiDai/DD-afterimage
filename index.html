@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⏳ 殘像 (Afterimage) - Demo</title>
+  <style>
+    :root {
+      --bg: #070913;
+      --primary: #38bdf8;
+      --accent: #ec4899;
+      --gold: #facc15;
+      --purple: #a855f7;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #fff;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+    /* 懸浮 HUD 介面 */
+    .hud {
+      position: absolute;
+      top: env(safe-area-inset-top, 12px);
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .hud-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .bar-container {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 3px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 180px;
+    }
+    .bar-label { font-size: 11px; font-weight: 800; color: #94a3b8; width: 28px; }
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 100%;
+      transition: width 0.15s ease-out;
+    }
+    .hp-fill { background: linear-gradient(90deg, #ef4444, #f43f5e); }
+    .exp-fill { background: linear-gradient(90deg, #06b6d4, #38bdf8); }
+    .hud-right {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 6px 14px;
+      text-align: right;
+      pointer-events: auto;
+    }
+    .score-text { font-size: 16px; font-weight: 800; color: var(--gold); }
+    .timer-text { font-size: 12px; color: #cbd5e1; font-family: monospace; }
+    .doc-link {
+      font-size: 11px;
+      color: var(--primary);
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 2px;
+      font-weight: bold;
+    }
+
+    /* 手機虛擬控制器 */
+    .controls {
+      position: absolute;
+      bottom: env(safe-area-inset-bottom, 24px);
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #joystick-zone {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      position: relative;
+      pointer-events: auto;
+    }
+    #joystick-knob {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary), #0284c7);
+      position: absolute;
+      top: 35px;
+      left: 35px;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+      pointer-events: none;
+      transform: translate(0, 0);
+      transition: transform 0.05s ease-out;
+    }
+    .skill-btn {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ec4899, #be185d);
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 0.1s, filter 0.2s;
+    }
+    .skill-btn:active { transform: scale(0.92); }
+    .skill-btn.cooldown {
+      filter: grayscale(0.8);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .skill-icon { font-size: 24px; }
+    .skill-text { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+
+    /* 升級三選一彈窗 */
+    .upgrade-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 9, 19, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .upgrade-modal.active { display: flex; }
+    .upgrade-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--gold);
+      margin-bottom: 20px;
+      text-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+    }
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .upgrade-card {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .upgrade-card:hover, .upgrade-card:active {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      background: #243248;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    }
+    .card-icon { font-size: 32px; }
+    .card-info h4 { font-size: 15px; color: #fff; margin-bottom: 4px; }
+    .card-info p { font-size: 12px; color: #94a3b8; }
+
+    /* 遊戲結束彈窗 */
+    .gameover-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 9, 19, 0.9);
+      backdrop-filter: blur(12px);
+      z-index: 60;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+    }
+    .gameover-modal.active { display: flex; }
+    .btn-restart {
+      margin-top: 20px;
+      background: var(--primary);
+      color: #0b0f19;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 12px 32px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <!-- 頂部 HUD -->
+  <div class="hud">
+    <div class="hud-left">
+      <div class="bar-container">
+        <span class="bar-label">HP</span>
+        <div class="bar-track"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+      </div>
+      <div class="bar-container">
+        <span class="bar-label">LV.<span id="level-num">1</span></span>
+        <div class="bar-track"><div id="exp-bar" class="bar-fill exp-fill" style="width: 0%;"></div></div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="score-text">💀 <span id="kill-count">0</span></div>
+      <div class="timer-text" id="time-display">00:00</div>
+      <a href="manual.html" class="doc-link">📖 玩法手冊</a>
+    </div>
+  </div>
+
+  <!-- 行動端操作區 -->
+  <div class="controls">
+    <div id="joystick-zone">
+      <div id="joystick-knob"></div>
+    </div>
+    <button id="echo-btn" class="skill-btn">
+      <span class="skill-icon">⏳</span>
+      <span class="skill-text" id="echo-text">時空裂影</span>
+    </button>
+  </div>
+
+  <!-- 升級彈窗 -->
+  <div id="upgrade-modal" class="upgrade-modal">
+    <div class="upgrade-title">⚡ 選擇時空突破天賦</div>
+    <div id="card-list" class="card-list"></div>
+  </div>
+
+  <!-- 結算彈窗 -->
+  <div id="gameover-modal" class="gameover-modal">
+    <h2 style="font-size: 28px; color: #ef4444; margin-bottom: 8px;">💀 時空線崩塌</h2>
+    <p style="color: #94a3b8; font-size: 14px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
+    <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
+    <button class="btn-restart" onclick="location.reload()">🔄 重啟時間線</button>
+  </div>
+
+  <script>
+    // --- 遊戲核心引擎 ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 視窗自適應
+    let width = 0, height = 0;
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 遊戲狀態
+    const STATE = {
+      isPaused: false,
+      isGameOver: false,
+      gameTime: 0,
+      kills: 0,
+      level: 1,
+      exp: 0,
+      maxExp: 10,
+      shake: 0
+    };
+
+    // 音效合成系統 (Web Audio)
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playLaser() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      },
+      playHit() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      },
+      playRewind() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      },
+      playGem() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(1400, this.ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      }
+    };
+    window.addEventListener('pointerdown', () => AudioEngine.init(), { once: true });
+
+    // 玩家配置
+    const player = {
+      x: width / 2,
+      y: height / 2,
+      radius: 16,
+      speed: 3.2,
+      hp: 100,
+      maxHp: 100,
+      attackCd: 0,
+      attackSpeed: 18, // 幀
+      shootCount: 1,
+      invulnerable: 0,
+      echoCd: 0,
+      maxEchoCd: 360, // 6秒 (60fps)
+      // 時間軌跡 Ring Buffer (記錄 180 幀 = 3 秒)
+      history: [],
+      maxHistory: 180,
+      // 天賦倍率
+      resonanceDmg: 0.8,
+      orbitalBlade: 0,
+      bladeAngle: 0
+    };
+
+    // 實體管理
+    const echoes = [];
+    const bullets = [];
+    const enemies = [];
+    const gems = [];
+    const particles = [];
+    const popups = [];
+
+    // 輸入控制
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.code === 'Space') triggerEcho();
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    // 虛擬搖桿
+    const joyZone = document.getElementById('joystick-zone');
+    const joyKnob = document.getElementById('joystick-knob');
+    let touchStartPos = null;
+    let joyVector = { x: 0, y: 0 };
+
+    joyZone.addEventListener('pointerdown', e => {
+      joyZone.setPointerCapture(e.pointerId);
+      const rect = joyZone.getBoundingClientRect();
+      touchStartPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      handleJoyMove(e);
+    });
+    joyZone.addEventListener('pointermove', e => {
+      if (touchStartPos) handleJoyMove(e);
+    });
+    function endJoy() {
+      touchStartPos = null;
+      joyVector = { x: 0, y: 0 };
+      joyKnob.style.transform = 'translate(0px, 0px)';
+    }
+    joyZone.addEventListener('pointerup', endJoy);
+    joyZone.addEventListener('pointercancel', endJoy);
+
+    function handleJoyMove(e) {
+      const dx = e.clientX - touchStartPos.x;
+      const dy = e.clientY - touchStartPos.y;
+      const dist = Math.hypot(dx, dy);
+      const maxR = 38;
+      const angle = Math.atan2(dy, dx);
+      const clampedDist = Math.min(dist, maxR);
+      joyVector.x = (clampedDist / maxR) * Math.cos(angle);
+      joyVector.y = (clampedDist / maxR) * Math.sin(angle);
+      joyKnob.style.transform = `translate(${Math.cos(angle) * clampedDist}px, ${Math.sin(angle) * clampedDist}px)`;
+    }
+
+    document.getElementById('echo-btn').addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      triggerEcho();
+    });
+
+    // 觸發時空裂影回溯
+    function triggerEcho() {
+      if (player.echoCd > 0 || player.history.length < 30) return;
+      AudioEngine.playRewind();
+      STATE.shake = 12;
+
+      // 取得 3 秒前（最早的歷史紀錄）
+      const oldState = player.history[0];
+      const recordedActions = [...player.history];
+
+      // 生成殘影 (在目前位置留存，重播剛才的走位與射擊)
+      echoes.push({
+        frames: recordedActions,
+        currentFrame: 0,
+        x: player.x,
+        y: player.y,
+        alpha: 0.85,
+        maxLife: recordedActions.length
+      });
+
+      // 玩家瞬移回 3 秒前
+      player.x = oldState.x;
+      player.y = oldState.y;
+      player.invulnerable = 45; // 0.75 秒無敵
+      player.echoCd = player.maxEchoCd;
+      player.history = []; // 重置當前軌跡
+
+      // 產生躍遷粒子
+      for (let i = 0; i < 24; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 2 + Math.random() * 5;
+        particles.push({
+          x: player.x, y: player.y,
+          vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+          life: 30, color: '#38bdf8', size: 3
+        });
+      }
+    }
+
+    // 升級池資料
+    const UPGRADES = [
+      { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: '🔫', apply: () => player.shootCount++ },
+      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: '⚡', apply: () => player.attackSpeed = Math.max(8, player.attackSpeed * 0.75) },
+      { id: 'resonance', title: '共振光刃', desc: '殘影連線雷射傷害 +50%', icon: '💠', apply: () => player.resonanceDmg += 0.5 },
+      { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: '🌀', apply: () => player.orbitalBlade++ },
+      { id: 'cooldown', title: '時空壓縮', desc: '裂影回溯冷卻時間 -25%', icon: '⏳', apply: () => player.maxEchoCd = Math.max(120, player.maxEchoCd * 0.75) },
+      { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: '💖', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
+    ];
+
+    function showUpgradeModal() {
+      STATE.isPaused = true;
+      const modal = document.getElementById('upgrade-modal');
+      const list = document.getElementById('card-list');
+      list.innerHTML = '';
+
+      // 隨機抽 3 張
+      const shuffled = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
+      shuffled.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'upgrade-card';
+        card.innerHTML = `
+          <div class="card-icon">${item.icon}</div>
+          <div class="card-info">
+            <h4>${item.title}</h4>
+            <p>${item.desc}</p>
+          </div>
+        `;
+        card.onclick = () => {
+          item.apply();
+          modal.classList.remove('active');
+          STATE.isPaused = false;
+        };
+        list.appendChild(card);
+      });
+      modal.classList.add('active');
+    }
+
+    // --- 遊戲主循環 ---
+    let frameCount = 0;
+    function update() {
+      if (STATE.isPaused || STATE.isGameOver) return;
+      frameCount++;
+      STATE.gameTime++;
+
+      // 1. 移動計算
+      let moveX = 0, moveY = 0;
+      if (keys['w'] || keys['arrowup']) moveY -= 1;
+      if (keys['s'] || keys['arrowdown']) moveY += 1;
+      if (keys['a'] || keys['arrowleft']) moveX -= 1;
+      if (keys['d'] || keys['arrowright']) moveX += 1;
+
+      if (moveX !== 0 || moveY !== 0) {
+        const len = Math.hypot(moveX, moveY);
+        moveX = (moveX / len) * player.speed;
+        moveY = (moveY / len) * player.speed;
+      } else if (touchStartPos) {
+        moveX = joyVector.x * player.speed;
+        moveY = joyVector.y * player.speed;
+      }
+
+      player.x = Math.max(player.radius, Math.min(width - player.radius, player.x + moveX));
+      player.y = Math.max(player.radius, Math.min(height - player.radius, player.y + moveY));
+
+      // 紀錄軌跡 (Ring Buffer)
+      player.history.push({ x: player.x, y: player.y, shooting: player.attackCd <= 0 });
+      if (player.history.length > player.maxHistory) {
+        player.history.shift();
+      }
+
+      // 冷卻計時
+      if (player.invulnerable > 0) player.invulnerable--;
+      if (player.echoCd > 0) player.echoCd--;
+
+      // 2. 自動射擊最近敵人
+      player.attackCd--;
+      if (player.attackCd <= 0 && enemies.length > 0) {
+        let nearest = null, minDist = Infinity;
+        for (const e of enemies) {
+          const d = Math.hypot(e.x - player.x, e.y - player.y);
+          if (d < minDist) { minDist = d; nearest = e; }
+        }
+        if (nearest) {
+          const baseAng = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+          const spread = 0.15;
+          const startOffset = -(player.shootCount - 1) * spread / 2;
+          for (let i = 0; i < player.shootCount; i++) {
+            const ang = baseAng + startOffset + i * spread;
+            bullets.push({
+              x: player.x, y: player.y,
+              vx: Math.cos(ang) * 9, vy: Math.sin(ang) * 9,
+              damage: 18, life: 60, isEcho: false
+            });
+          }
+          AudioEngine.playLaser();
+          player.attackCd = player.attackSpeed;
+        }
+      }
+
+      // 3. 殘影更新與重播
+      for (let i = echoes.length - 1; i >= 0; i--) {
+        const ec = echoes[i];
+        if (ec.currentFrame < ec.frames.length) {
+          const record = ec.frames[ec.currentFrame];
+          ec.x = record.x;
+          ec.y = record.y;
+          ec.currentFrame++;
+
+          // 殘影自動開火
+          if (record.shooting && enemies.length > 0) {
+            let nearest = null, minDist = Infinity;
+            for (const e of enemies) {
+              const d = Math.hypot(e.x - ec.x, e.y - ec.y);
+              if (d < minDist) { minDist = d; nearest = e; }
+            }
+            if (nearest) {
+              const ang = Math.atan2(nearest.y - ec.y, nearest.x - ec.x);
+              bullets.push({
+                x: ec.x, y: ec.y,
+                vx: Math.cos(ang) * 8, vy: Math.sin(ang) * 8,
+                damage: 14, life: 55, isEcho: true
+              });
+            }
+          }
+
+          // 殘影與本體連線雷射切割判定
+          for (const enemy of enemies) {
+            const distToLine = pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y);
+            if (distToLine < enemy.radius + 6) {
+              enemy.hp -= player.resonanceDmg;
+              enemy.flash = 2;
+              if (Math.random() < 0.2) {
+                particles.push({
+                  x: enemy.x, y: enemy.y,
+                  vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+                  life: 15, color: '#ec4899', size: 2.5
+                });
+              }
+            }
+          }
+        } else {
+          // 殘影消散大爆炸
+          for (let p = 0; p < 20; p++) {
+            const ang = Math.random() * Math.PI * 2;
+            particles.push({
+              x: ec.x, y: ec.y,
+              vx: Math.cos(ang) * 4, vy: Math.sin(ang) * 4,
+              life: 25, color: '#a855f7', size: 3
+            });
+          }
+          echoes.splice(i, 1);
+        }
+      }
+
+      // 軌道光刃旋轉
+      if (player.orbitalBlade > 0) {
+        player.bladeAngle += 0.05;
+        const bladeDist = 55;
+        for (let b = 0; b < player.orbitalBlade; b++) {
+          const ang = player.bladeAngle + (b * (Math.PI * 2 / player.orbitalBlade));
+          const bx = player.x + Math.cos(ang) * bladeDist;
+          const by = player.y + Math.sin(ang) * bladeDist;
+          for (const e of enemies) {
+            if (Math.hypot(e.x - bx, e.y - by) < e.radius + 10) {
+              e.hp -= 1.2;
+              e.flash = 2;
+            }
+          }
+        }
+      }
+
+      // 4. 子彈更新
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.life--;
+
+        // 命中碰撞檢測
+        for (const e of enemies) {
+          if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 4) {
+            e.hp -= b.damage;
+            e.flash = 3;
+            AudioEngine.playHit();
+            popups.push({ x: e.x, y: e.y - 10, text: b.damage, life: 25, color: b.isEcho ? '#ec4899' : '#38bdf8' });
+            b.life = 0;
+            break;
+          }
+        }
+        if (b.life <= 0) bullets.splice(i, 1);
+      }
+
+      // 5. 怪物生成與更新
+      const spawnInterval = Math.max(25, 75 - Math.floor(STATE.gameTime / 300));
+      if (frameCount % spawnInterval === 0) {
+        const edge = Math.floor(Math.random() * 4);
+        let ex = 0, ey = 0;
+        if (edge === 0) { ex = Math.random() * width; ey = -20; }
+        else if (edge === 1) { ex = width + 20; ey = Math.random() * height; }
+        else if (edge === 2) { ex = Math.random() * width; ey = height + 20; }
+        else { ex = -20; ey = Math.random() * height; }
+
+        enemies.push({
+          x: ex, y: ey,
+          radius: 13,
+          speed: 1.2 + Math.random() * 0.8,
+          hp: 25 + Math.floor(STATE.gameTime / 400) * 10,
+          maxHp: 25 + Math.floor(STATE.gameTime / 400) * 10,
+          flash: 0
+        });
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (e.flash > 0) e.flash--;
+
+        // 追逐目標（殘影存在時有 50% 機率被殘影吸引）
+        let target = player;
+        if (echoes.length > 0 && i % 2 === 0) {
+          target = echoes[0];
+        }
+
+        const angle = Math.atan2(target.y - e.y, target.x - e.x);
+        e.x += Math.cos(angle) * e.speed;
+        e.y += Math.sin(angle) * e.speed;
+
+        // 撞擊玩家
+        if (Math.hypot(e.x - player.x, e.y - player.y) < e.radius + player.radius) {
+          if (player.invulnerable <= 0) {
+            player.hp -= 12;
+            player.invulnerable = 30;
+            STATE.shake = 8;
+            AudioEngine.playHit();
+            if (player.hp <= 0) {
+              player.hp = 0;
+              gameOver();
+            }
+          }
+        }
+
+        // 怪物死亡
+        if (e.hp <= 0) {
+          STATE.kills++;
+          gems.push({ x: e.x, y: e.y, exp: 2 });
+          for (let p = 0; p < 8; p++) {
+            const ang = Math.random() * Math.PI * 2;
+            particles.push({
+              x: e.x, y: e.y,
+              vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
+              life: 20, color: '#f43f5e', size: 2.5
+            });
+          }
+          enemies.splice(i, 1);
+        }
+      }
+
+      // 6. 經驗晶體拾取
+      for (let i = gems.length - 1; i >= 0; i--) {
+        const g = gems[i];
+        const dist = Math.hypot(player.x - g.x, player.y - g.y);
+        if (dist < 120) {
+          const ang = Math.atan2(player.y - g.y, player.x - g.x);
+          g.x += Math.cos(ang) * 6;
+          g.y += Math.sin(ang) * 6;
+        }
+        if (dist < player.radius + 8) {
+          STATE.exp += g.exp;
+          AudioEngine.playGem();
+          if (STATE.exp >= STATE.maxExp) {
+            STATE.level++;
+            STATE.exp -= STATE.maxExp;
+            STATE.maxExp = Math.floor(STATE.maxExp * 1.4);
+            showUpgradeModal();
+          }
+          gems.splice(i, 1);
+        }
+      }
+
+      // 7. 粒子與飄字
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const pu = popups[i];
+        pu.y -= 0.8;
+        pu.life--;
+        if (pu.life <= 0) popups.splice(i, 1);
+      }
+
+      // 8. 更新 DOM UI
+      document.getElementById('hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+      document.getElementById('exp-bar').style.width = `${(STATE.exp / STATE.maxExp) * 100}%`;
+      document.getElementById('level-num').innerText = STATE.level;
+      document.getElementById('kill-count').innerText = STATE.kills;
+
+      const sec = Math.floor(STATE.gameTime / 60);
+      const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+      const ss = String(sec % 60).padStart(2, '0');
+      document.getElementById('time-display').innerText = `${mm}:${ss}`;
+
+      const echoBtn = document.getElementById('echo-btn');
+      const echoText = document.getElementById('echo-text');
+      if (player.echoCd > 0) {
+        echoBtn.classList.add('cooldown');
+        echoText.innerText = `${(player.echoCd / 60).toFixed(1)}s`;
+      } else {
+        echoBtn.classList.remove('cooldown');
+        echoText.innerText = '時空裂影';
+      }
+    }
+
+    // 點到線段距離計算 (用於雷射連線碰撞)
+    function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+      const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+      if (l2 === 0) return Math.hypot(px - x1, py - y1);
+      let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
+    }
+
+    // --- 渲染畫面 ---
+    function render() {
+      ctx.save();
+      // 震屏效果
+      if (STATE.shake > 0) {
+        ctx.translate((Math.random() - 0.5) * STATE.shake, (Math.random() - 0.5) * STATE.shake);
+        STATE.shake *= 0.88;
+        if (STATE.shake < 0.5) STATE.shake = 0;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      // 背景網格
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+      }
+      for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+      }
+
+      // 1. 繪製殘影與共振雷射連線
+      for (const ec of echoes) {
+        // 連線雷射
+        ctx.save();
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 3 + Math.sin(frameCount * 0.2) * 1.5;
+        ctx.shadowColor = '#ec4899';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(ec.x, ec.y);
+        ctx.stroke();
+        ctx.restore();
+
+        // 殘影本體
+        ctx.save();
+        ctx.fillStyle = 'rgba(236, 72, 153, 0.4)';
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#ec4899';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(ec.x, ec.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 2. 經驗晶體
+      for (const g of gems) {
+        ctx.save();
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 3. 怪物繪製
+      for (const e of enemies) {
+        ctx.save();
+        ctx.fillStyle = e.flash > 0 ? '#fff' : '#f43f5e';
+        ctx.strokeStyle = '#9f1239';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#f43f5e';
+        ctx.shadowBlur = e.flash > 0 ? 12 : 4;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 怪物血條
+        if (e.hp < e.maxHp) {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.fillRect(e.x - 12, e.y - 18, 24, 4);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(e.x - 12, e.y - 18, (e.hp / e.maxHp) * 24, 4);
+        }
+        ctx.restore();
+      }
+
+      // 4. 子彈繪製
+      for (const b of bullets) {
+        ctx.save();
+        ctx.fillStyle = b.isEcho ? '#ec4899' : '#38bdf8';
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 5. 軌道光刃
+      if (player.orbitalBlade > 0) {
+        const bladeDist = 55;
+        for (let b = 0; b < player.orbitalBlade; b++) {
+          const ang = player.bladeAngle + (b * (Math.PI * 2 / player.orbitalBlade));
+          const bx = player.x + Math.cos(ang) * bladeDist;
+          const by = player.y + Math.sin(ang) * bladeDist;
+          ctx.save();
+          ctx.fillStyle = '#facc15';
+          ctx.shadowColor = '#facc15';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(bx, by, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // 6. 玩家本體繪製
+      ctx.save();
+      if (player.invulnerable > 0 && Math.floor(frameCount / 4) % 2 === 0) {
+        ctx.globalAlpha = 0.5;
+      }
+      ctx.fillStyle = '#38bdf8';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 核心光芒
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 7. 粒子效果
+      for (const p of particles) {
+        ctx.save();
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 30;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 8. 傷害飄字
+      for (const pu of popups) {
+        ctx.save();
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = pu.color;
+        ctx.globalAlpha = pu.life / 25;
+        ctx.fillText(`-${pu.text}`, pu.x, pu.y);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function gameOver() {
+      STATE.isGameOver = true;
+      const modal = document.getElementById('gameover-modal');
+      const sec = Math.floor(STATE.gameTime / 60);
+      const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+      const ss = String(sec % 60).padStart(2, '0');
+      document.getElementById('final-time').innerText = `${mm}:${ss}`;
+      document.getElementById('final-kills').innerText = STATE.kills;
+      modal.classList.add('active');
+    }
+
+    // 遊戲循環
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
