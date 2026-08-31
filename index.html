@@ -25,7 +25,7 @@
       height: 100dvh;
       overflow: hidden;
       background: var(--bg);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
       color: #fff;
     }
     #game-canvas {
@@ -63,7 +63,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      min-width: 180px;
+      min-width: 170px;
     }
     .bar-label { font-size: 11px; font-weight: 800; color: #94a3b8; width: 28px; }
     .bar-track {
@@ -101,63 +101,49 @@
       font-weight: bold;
     }
 
-    /* 手機虛擬控制器 */
-    .controls {
+    /* 單手提示標籤 */
+    .tip-toast {
       position: absolute;
-      bottom: env(safe-area-inset-bottom, 24px);
-      left: 20px;
-      right: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      z-index: 10;
+      bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      backdrop-filter: blur(8px);
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 20px;
       pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
     }
-    #joystick-zone {
-      width: 120px;
-      height: 120px;
+    .tip-toast strong { color: var(--primary); }
+
+    /* 動態跟隨虛擬搖桿 (支援任意點觸控生成) */
+    #dynamic-joy {
+      position: absolute;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.05);
-      border: 2px dashed rgba(255, 255, 255, 0.2);
-      position: relative;
-      pointer-events: auto;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08), rgba(255, 255, 255, 0.02));
+      border: 1.5px dashed rgba(56, 189, 248, 0.35);
+      pointer-events: none;
+      display: none;
+      z-index: 20;
+      transform: translate(-50%, -50%);
     }
-    #joystick-knob {
-      width: 50px;
-      height: 50px;
+    #dynamic-knob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       background: radial-gradient(circle, var(--primary), #0284c7);
-      position: absolute;
-      top: 35px;
-      left: 35px;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
-      pointer-events: none;
-      transform: translate(0, 0);
-      transition: transform 0.05s ease-out;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
+      transform: translate(-50%, -50%);
     }
-    .skill-btn {
-      width: 76px;
-      height: 76px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #ec4899, #be185d);
-      border: 3px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      pointer-events: auto;
-      transition: transform 0.1s, filter 0.2s;
-    }
-    .skill-btn:active { transform: scale(0.92); }
-    .skill-btn.cooldown {
-      filter: grayscale(0.8);
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    .skill-icon { font-size: 24px; }
-    .skill-text { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
 
     /* 升級三選一彈窗 */
     .upgrade-modal {
@@ -264,15 +250,14 @@
     </div>
   </div>
 
-  <!-- 行動端操作區 -->
-  <div class="controls">
-    <div id="joystick-zone">
-      <div id="joystick-knob"></div>
-    </div>
-    <button id="echo-btn" class="skill-btn">
-      <span class="skill-icon">⏳</span>
-      <span class="skill-text" id="echo-text">時空裂影</span>
-    </button>
+  <!-- 操作指引提示 -->
+  <div class="tip-toast">
+    👆 <strong>雙擊螢幕</strong>：回溯召喚殘像 ｜ 🎯 <strong>點擊殘像</strong>：飛雷神換位 ｜ 🖐️ <strong>鬆手</strong>：定點射擊
+  </div>
+
+  <!-- 動態跟隨搖桿 -->
+  <div id="dynamic-joy">
+    <div id="dynamic-knob"></div>
   </div>
 
   <!-- 升級彈窗 -->
@@ -332,7 +317,7 @@
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(800, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -346,7 +331,7 @@
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(180, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -359,13 +344,27 @@
         const gain = this.ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(200, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.35);
-        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.35);
+        osc.stop(this.ctx.currentTime + 0.3);
+      },
+      playSwap() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.12);
       },
       playGem() {
         if (!this.ctx) return;
@@ -374,7 +373,7 @@
         osc.type = 'sine';
         osc.frequency.setValueAtTime(900, this.ctx.currentTime);
         osc.frequency.setValueAtTime(1400, this.ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -393,15 +392,14 @@
       hp: 100,
       maxHp: 100,
       attackCd: 0,
-      attackSpeed: 18, // 幀
+      attackSpeed: 18,
       shootCount: 1,
       invulnerable: 0,
       echoCd: 0,
-      maxEchoCd: 360, // 6秒 (60fps)
-      // 時間軌跡 Ring Buffer (記錄 180 幀 = 3 秒)
+      maxEchoCd: 240, // 4 秒 CD
+      maxEchoCount: 2, // 支援最多 2 個殘像（連成三角形結界！）
       history: [],
-      maxHistory: 180,
-      // 天賦倍率
+      maxHistory: 180, // 3 秒歷史
       resonanceDmg: 0.8,
       orbitalBlade: 0,
       bladeAngle: 0
@@ -415,67 +413,111 @@
     const particles = [];
     const popups = [];
 
-    // 輸入控制
+    // 鍵盤輸入
     const keys = {};
     window.addEventListener('keydown', e => {
       keys[e.key.toLowerCase()] = true;
       if (e.code === 'Space') triggerEcho();
+      if (e.key.toLowerCase() === 'q') swapWithFirstEcho();
     });
     window.addEventListener('keyup', e => {
       keys[e.key.toLowerCase()] = false;
     });
 
-    // 虛擬搖桿
-    const joyZone = document.getElementById('joystick-zone');
-    const joyKnob = document.getElementById('joystick-knob');
-    let touchStartPos = null;
-    let joyVector = { x: 0, y: 0 };
+    // --- 極致單手手勢系統 (全螢幕動態搖桿 + 雙擊回溯 + 點擊殘像換位) ---
+    const joyContainer = document.getElementById('dynamic-joy');
+    const joyKnob = document.getElementById('dynamic-knob');
+    let touchOrigin = null;
+    let joyVec = { x: 0, y: 0 };
+    let lastTapTime = 0;
+    let touchStartTime = 0;
+    let activePointerId = null;
 
-    joyZone.addEventListener('pointerdown', e => {
-      joyZone.setPointerCapture(e.pointerId);
-      const rect = joyZone.getBoundingClientRect();
-      touchStartPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      handleJoyMove(e);
+    window.addEventListener('pointerdown', e => {
+      // 排除 UI 點擊
+      if (e.target.closest('.hud-right') || e.target.closest('.upgrade-modal') || e.target.closest('.gameover-modal')) return;
+      AudioEngine.init();
+
+      const now = performance.now();
+      const clickX = e.clientX;
+      const clickY = e.clientY;
+
+      // 1. 檢測是否點擊在「場上的殘像」周圍（換位 Swap 判定，容錯半徑 45px）
+      let clickedEcho = null;
+      for (const ec of echoes) {
+        if (Math.hypot(clickX - ec.x, clickY - ec.y) < player.radius + 35) {
+          clickedEcho = ec;
+          break;
+        }
+      }
+
+      if (clickedEcho) {
+        // 執行換位！
+        swapWithEcho(clickedEcho);
+        return;
+      }
+
+      // 2. 檢測是否為「雙擊（Double Tap）」回溯
+      if (now - lastTapTime < 280) {
+        triggerEcho();
+        lastTapTime = 0; // 重置防止三連擊
+        return;
+      }
+      lastTapTime = now;
+
+      // 3. 正常搖桿啟動（在手指按下的位置動態生成搖桿）
+      activePointerId = e.pointerId;
+      touchStartTime = now;
+      touchOrigin = { x: clickX, y: clickY };
+      joyVec = { x: 0, y: 0 };
+
+      joyContainer.style.left = `${clickX}px`;
+      joyContainer.style.top = `${clickY}px`;
+      joyKnob.style.transform = 'translate(-50%, -50%)';
+      joyContainer.style.display = 'block';
     });
-    joyZone.addEventListener('pointermove', e => {
-      if (touchStartPos) handleJoyMove(e);
+
+    window.addEventListener('pointermove', e => {
+      if (touchOrigin && e.pointerId === activePointerId) {
+        const dx = e.clientX - touchOrigin.x;
+        const dy = e.clientY - touchOrigin.y;
+        const dist = Math.hypot(dx, dy);
+        const maxR = 40;
+        const angle = Math.atan2(dy, dx);
+        const clamped = Math.min(dist, maxR);
+
+        joyVec.x = (clamped / maxR) * Math.cos(angle);
+        joyVec.y = (clamped / maxR) * Math.sin(angle);
+
+        joyKnob.style.transform = `translate(calc(-50% + ${Math.cos(angle) * clamped}px), calc(-50% + ${Math.sin(angle) * clamped}px))`;
+      }
     });
-    function endJoy() {
-      touchStartPos = null;
-      joyVector = { x: 0, y: 0 };
-      joyKnob.style.transform = 'translate(0px, 0px)';
+
+    function resetTouch() {
+      touchOrigin = null;
+      activePointerId = null;
+      joyVec = { x: 0, y: 0 };
+      joyContainer.style.display = 'none';
     }
-    joyZone.addEventListener('pointerup', endJoy);
-    joyZone.addEventListener('pointercancel', endJoy);
-
-    function handleJoyMove(e) {
-      const dx = e.clientX - touchStartPos.x;
-      const dy = e.clientY - touchStartPos.y;
-      const dist = Math.hypot(dx, dy);
-      const maxR = 38;
-      const angle = Math.atan2(dy, dx);
-      const clampedDist = Math.min(dist, maxR);
-      joyVector.x = (clampedDist / maxR) * Math.cos(angle);
-      joyVector.y = (clampedDist / maxR) * Math.sin(angle);
-      joyKnob.style.transform = `translate(${Math.cos(angle) * clampedDist}px, ${Math.sin(angle) * clampedDist}px)`;
-    }
-
-    document.getElementById('echo-btn').addEventListener('pointerdown', e => {
-      e.stopPropagation();
-      triggerEcho();
-    });
+    window.addEventListener('pointerup', resetTouch);
+    window.addEventListener('pointercancel', resetTouch);
 
     // 觸發時空裂影回溯
     function triggerEcho() {
-      if (player.echoCd > 0 || player.history.length < 30) return;
+      if (player.echoCd > 0 || player.history.length < 25) return;
       AudioEngine.playRewind();
-      STATE.shake = 12;
+      STATE.shake = 10;
 
-      // 取得 3 秒前（最早的歷史紀錄）
+      // 取得 3 秒前狀態
       const oldState = player.history[0];
       const recordedActions = [...player.history];
 
-      // 生成殘影 (在目前位置留存，重播剛才的走位與射擊)
+      // 若達到殘像上限，移除最早生成的殘像
+      if (echoes.length >= player.maxEchoCount) {
+        echoes.shift();
+      }
+
+      // 生成殘像 (在目前位置留存)
       echoes.push({
         frames: recordedActions,
         currentFrame: 0,
@@ -488,29 +530,63 @@
       // 玩家瞬移回 3 秒前
       player.x = oldState.x;
       player.y = oldState.y;
-      player.invulnerable = 45; // 0.75 秒無敵
+      player.invulnerable = 40; // 0.65 秒無敵
       player.echoCd = player.maxEchoCd;
       player.history = []; // 重置當前軌跡
 
-      // 產生躍遷粒子
-      for (let i = 0; i < 24; i++) {
+      // 躍遷粒子
+      for (let i = 0; i < 20; i++) {
         const ang = Math.random() * Math.PI * 2;
-        const spd = 2 + Math.random() * 5;
+        const spd = 2 + Math.random() * 4;
         particles.push({
           x: player.x, y: player.y,
           vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-          life: 30, color: '#38bdf8', size: 3
+          life: 25, color: '#38bdf8', size: 3
         });
       }
     }
 
-    // 升級池資料
+    // 與指定殘像換位 (Swap)
+    function swapWithEcho(targetEcho) {
+      AudioEngine.playSwap();
+      STATE.shake = 8;
+
+      const px = player.x;
+      const py = player.y;
+
+      // 交換座標
+      player.x = targetEcho.x;
+      player.y = targetEcho.y;
+      targetEcho.x = px;
+      targetEcho.y = py;
+
+      player.invulnerable = 20; // 換位給予 0.3 秒無敵
+
+      // 在兩點之間產生換位時空裂縫粒子
+      for (let i = 0; i < 15; i++) {
+        const t = Math.random();
+        particles.push({
+          x: px + (player.x - px) * t,
+          y: py + (player.y - py) * t,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3,
+          life: 20, color: '#facc15', size: 3.5
+        });
+      }
+    }
+
+    function swapWithFirstEcho() {
+      if (echoes.length > 0) swapWithEcho(echoes[0]);
+    }
+
+    // 升級天賦
     const UPGRADES = [
       { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: '🔫', apply: () => player.shootCount++ },
       { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: '⚡', apply: () => player.attackSpeed = Math.max(8, player.attackSpeed * 0.75) },
-      { id: 'resonance', title: '共振光刃', desc: '殘影連線雷射傷害 +50%', icon: '💠', apply: () => player.resonanceDmg += 0.5 },
+      { id: 'resonance', title: '共振光刃', desc: '殘像連線/結界雷射傷害 +50%', icon: '💠', apply: () => player.resonanceDmg += 0.5 },
+      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（拉出多邊形三角殺陣！）', icon: '👥', apply: () => player.maxEchoCount++ },
       { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: '🌀', apply: () => player.orbitalBlade++ },
-      { id: 'cooldown', title: '時空壓縮', desc: '裂影回溯冷卻時間 -25%', icon: '⏳', apply: () => player.maxEchoCd = Math.max(120, player.maxEchoCd * 0.75) },
+      { id: 'cooldown', title: '時空壓縮', desc: '裂影回溯冷卻時間 -25%', icon: '⏳', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
       { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: '💖', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
     ];
 
@@ -520,7 +596,6 @@
       const list = document.getElementById('card-list');
       list.innerHTML = '';
 
-      // 隨機抽 3 張
       const shuffled = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
       shuffled.forEach(item => {
         const card = document.createElement('div');
@@ -549,7 +624,7 @@
       frameCount++;
       STATE.gameTime++;
 
-      // 1. 移動計算
+      // 1. 移動計算 (手指鬆開時 joyVec 為 0，本體原地停下)
       let moveX = 0, moveY = 0;
       if (keys['w'] || keys['arrowup']) moveY -= 1;
       if (keys['s'] || keys['arrowdown']) moveY += 1;
@@ -560,9 +635,9 @@
         const len = Math.hypot(moveX, moveY);
         moveX = (moveX / len) * player.speed;
         moveY = (moveY / len) * player.speed;
-      } else if (touchStartPos) {
-        moveX = joyVector.x * player.speed;
-        moveY = joyVector.y * player.speed;
+      } else if (touchOrigin) {
+        moveX = joyVec.x * player.speed;
+        moveY = joyVec.y * player.speed;
       }
 
       player.x = Math.max(player.radius, Math.min(width - player.radius, player.x + moveX));
@@ -603,7 +678,7 @@
         }
       }
 
-      // 3. 殘影更新與重播
+      // 3. 殘像更新與重播
       for (let i = echoes.length - 1; i >= 0; i--) {
         const ec = echoes[i];
         if (ec.currentFrame < ec.frames.length) {
@@ -612,7 +687,7 @@
           ec.y = record.y;
           ec.currentFrame++;
 
-          // 殘影自動開火
+          // 殘像自動開火
           if (record.shooting && enemies.length > 0) {
             let nearest = null, minDist = Infinity;
             for (const e of enemies) {
@@ -628,25 +703,9 @@
               });
             }
           }
-
-          // 殘影與本體連線雷射切割判定
-          for (const enemy of enemies) {
-            const distToLine = pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y);
-            if (distToLine < enemy.radius + 6) {
-              enemy.hp -= player.resonanceDmg;
-              enemy.flash = 2;
-              if (Math.random() < 0.2) {
-                particles.push({
-                  x: enemy.x, y: enemy.y,
-                  vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
-                  life: 15, color: '#ec4899', size: 2.5
-                });
-              }
-            }
-          }
         } else {
-          // 殘影消散大爆炸
-          for (let p = 0; p < 20; p++) {
+          // 殘像消散
+          for (let p = 0; p < 18; p++) {
             const ang = Math.random() * Math.PI * 2;
             particles.push({
               x: ec.x, y: ec.y,
@@ -658,7 +717,36 @@
         }
       }
 
-      // 軌道光刃旋轉
+      // 殘像雷射割裂與多邊形結界判定
+      if (echoes.length === 1) {
+        // 單殘像：直線雷射
+        const ec = echoes[0];
+        for (const enemy of enemies) {
+          if (pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y) < enemy.radius + 6) {
+            enemy.hp -= player.resonanceDmg;
+            enemy.flash = 2;
+          }
+        }
+      } else if (echoes.length >= 2) {
+        // 雙殘像以上：三角形/多邊形封閉結界！
+        const poly = [{ x: player.x, y: player.y }, ...echoes.map(e => ({ x: e.x, y: e.y }))];
+        for (const enemy of enemies) {
+          // 檢查怪物是否在多邊形內部
+          if (isPointInPolygon({ x: enemy.x, y: enemy.y }, poly)) {
+            enemy.hp -= player.resonanceDmg * 1.5; // 結界內部 1.5 倍高頻湮滅傷害
+            enemy.flash = 2;
+            if (Math.random() < 0.25) {
+              particles.push({
+                x: enemy.x, y: enemy.y,
+                vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+                life: 12, color: '#facc15', size: 2.5
+              });
+            }
+          }
+        }
+      }
+
+      // 軌道光刃
       if (player.orbitalBlade > 0) {
         player.bladeAngle += 0.05;
         const bladeDist = 55;
@@ -682,7 +770,6 @@
         b.y += b.vy;
         b.life--;
 
-        // 命中碰撞檢測
         for (const e of enemies) {
           if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 4) {
             e.hp -= b.damage;
@@ -697,7 +784,7 @@
       }
 
       // 5. 怪物生成與更新
-      const spawnInterval = Math.max(25, 75 - Math.floor(STATE.gameTime / 300));
+      const spawnInterval = Math.max(20, 65 - Math.floor(STATE.gameTime / 300));
       if (frameCount % spawnInterval === 0) {
         const edge = Math.floor(Math.random() * 4);
         let ex = 0, ey = 0;
@@ -720,7 +807,7 @@
         const e = enemies[i];
         if (e.flash > 0) e.flash--;
 
-        // 追逐目標（殘影存在時有 50% 機率被殘影吸引）
+        // 追逐目標（殘像存在時有 50% 機率被殘像吸引）
         let target = player;
         if (echoes.length > 0 && i % 2 === 0) {
           target = echoes[0];
@@ -807,19 +894,9 @@
       const mm = String(Math.floor(sec / 60)).padStart(2, '0');
       const ss = String(sec % 60).padStart(2, '0');
       document.getElementById('time-display').innerText = `${mm}:${ss}`;
-
-      const echoBtn = document.getElementById('echo-btn');
-      const echoText = document.getElementById('echo-text');
-      if (player.echoCd > 0) {
-        echoBtn.classList.add('cooldown');
-        echoText.innerText = `${(player.echoCd / 60).toFixed(1)}s`;
-      } else {
-        echoBtn.classList.remove('cooldown');
-        echoText.innerText = '時空裂影';
-      }
     }
 
-    // 點到線段距離計算 (用於雷射連線碰撞)
+    // 幾何計算工具
     function pointToSegmentDist(px, py, x1, y1, x2, y2) {
       const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
       if (l2 === 0) return Math.hypot(px - x1, py - y1);
@@ -828,10 +905,21 @@
       return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
     }
 
+    function isPointInPolygon(point, vs) {
+      let x = point.x, y = point.y;
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i].x, yi = vs[i].y;
+        let xj = vs[j].x, yj = vs[j].y;
+        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
     // --- 渲染畫面 ---
     function render() {
       ctx.save();
-      // 震屏效果
       if (STATE.shake > 0) {
         ctx.translate((Math.random() - 0.5) * STATE.shake, (Math.random() - 0.5) * STATE.shake);
         STATE.shake *= 0.88;
@@ -851,9 +939,26 @@
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
       }
 
-      // 1. 繪製殘影與共振雷射連線
-      for (const ec of echoes) {
-        // 連線雷射
+      // 1. 繪製殘像與結界
+      if (echoes.length >= 2) {
+        // 多邊形半透明結界覆蓋
+        ctx.save();
+        ctx.fillStyle = 'rgba(236, 72, 153, 0.15)';
+        ctx.strokeStyle = '#ec4899';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#ec4899';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        for (const ec of echoes) {
+          ctx.lineTo(ec.x, ec.y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      } else if (echoes.length === 1) {
+        // 單條連線雷射
         ctx.save();
         ctx.strokeStyle = '#ec4899';
         ctx.lineWidth = 3 + Math.sin(frameCount * 0.2) * 1.5;
@@ -861,13 +966,24 @@
         ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.moveTo(player.x, player.y);
-        ctx.lineTo(ec.x, ec.y);
+        ctx.lineTo(echoes[0].x, echoes[0].y);
         ctx.stroke();
         ctx.restore();
+      }
 
-        // 殘影本體
+      // 殘像本體與換位指示圈
+      for (const ec of echoes) {
         ctx.save();
-        ctx.fillStyle = 'rgba(236, 72, 153, 0.4)';
+        // 外層換位提示呼吸圈
+        ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(ec.x, ec.y, player.radius + 10 + Math.sin(frameCount * 0.15) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 殘像主體
+        ctx.fillStyle = 'rgba(236, 72, 153, 0.45)';
         ctx.strokeStyle = '#ec4899';
         ctx.lineWidth = 2;
         ctx.shadowColor = '#ec4899';
@@ -876,6 +992,12 @@
         ctx.arc(ec.x, ec.y, player.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        // 換位圖示
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = '#facc15';
+        ctx.textAlign = 'center';
+        ctx.fillText('SWAP', ec.x, ec.y - player.radius - 14);
         ctx.restore();
       }
 
@@ -891,7 +1013,7 @@
         ctx.restore();
       }
 
-      // 3. 怪物繪製
+      // 3. 怪物
       for (const e of enemies) {
         ctx.save();
         ctx.fillStyle = e.flash > 0 ? '#fff' : '#f43f5e';
@@ -904,7 +1026,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // 怪物血條
         if (e.hp < e.maxHp) {
           ctx.fillStyle = 'rgba(0,0,0,0.6)';
           ctx.fillRect(e.x - 12, e.y - 18, 24, 4);
@@ -914,7 +1035,7 @@
         ctx.restore();
       }
 
-      // 4. 子彈繪製
+      // 4. 子彈
       for (const b of bullets) {
         ctx.save();
         ctx.fillStyle = b.isEcho ? '#ec4899' : '#38bdf8';
@@ -944,7 +1065,7 @@
         }
       }
 
-      // 6. 玩家本體繪製
+      // 6. 玩家本體
       ctx.save();
       if (player.invulnerable > 0 && Math.floor(frameCount / 4) % 2 === 0) {
         ctx.globalAlpha = 0.5;
@@ -959,7 +1080,6 @@
       ctx.fill();
       ctx.stroke();
 
-      // 核心光芒
       ctx.fillStyle = '#fff';
       ctx.beginPath();
       ctx.arc(player.x, player.y, 6, 0, Math.PI * 2);
@@ -970,7 +1090,7 @@
       for (const p of particles) {
         ctx.save();
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 30;
+        ctx.globalAlpha = p.life / 25;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
