@@ -425,22 +425,25 @@
       }
     };
 
-    // --- 瀏覽器原生長按與雙擊手勢全面防禦 ---
-    document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
+    // --- 瀏覽器原生長按、文字選取、放大鏡手勢【全域絕對阻斷】 ---
+    window.addEventListener('contextmenu', e => e.preventDefault(), { passive: false, capture: true });
+    window.addEventListener('selectstart', e => e.preventDefault(), { passive: false, capture: true });
     ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
-      document.addEventListener(evt, e => e.preventDefault(), { passive: false });
+      window.addEventListener(evt, e => e.preventDefault(), { passive: false, capture: true });
     });
-    document.addEventListener('touchmove', e => {
-      if (e.touches && e.touches.length > 1) e.preventDefault();
-    }, { passive: false });
 
-    let lastBrowserTouchTime = 0;
-    document.addEventListener('touchstart', e => {
-      const now = Date.now();
-      if (now - lastBrowserTouchTime <= 350 && e.cancelable) {
+    // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡
+    window.addEventListener('touchstart', e => {
+      // 若非互動按鈕，全面執行 preventDefault
+      const isInteractive = e.target && (e.target.closest('button') || e.target.closest('a') || e.target.closest('#joystick-base'));
+      if (!isInteractive && e.cancelable) {
         e.preventDefault();
       }
-      lastBrowserTouchTime = now;
+    }, { passive: false });
+
+    window.addEventListener('touchmove', e => {
+      // 全螢幕遊戲完全禁止瀏覽器橡皮筋滾動
+      if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
     document.getElementById('btn-fullscreen').addEventListener('pointerdown', (e) => {
