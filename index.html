@@ -55,23 +55,23 @@
     .hud-left {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
     .bar-container {
       background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 999px;
-      padding: 3px 8px;
+      padding: 2px 8px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      min-width: 170px;
+      gap: 6px;
+      min-width: 150px;
     }
-    .bar-label { font-size: 11px; font-weight: 800; color: #94a3b8; width: 28px; }
+    .bar-label { font-size: 10px; font-weight: 800; color: #94a3b8; width: 26px; }
     .bar-track {
       flex: 1;
-      height: 8px;
+      height: 6px;
       background: rgba(0, 0, 0, 0.5);
       border-radius: 999px;
       overflow: hidden;
@@ -88,15 +88,15 @@
       background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 12px;
-      padding: 6px 14px;
+      border-radius: 10px;
+      padding: 4px 12px;
       text-align: right;
       pointer-events: auto;
     }
-    .score-text { font-size: 16px; font-weight: 800; color: var(--gold); }
-    .timer-text { font-size: 12px; color: #cbd5e1; font-family: monospace; }
+    .score-text { font-size: 14px; font-weight: 800; color: var(--gold); }
+    .timer-text { font-size: 11px; color: #cbd5e1; font-family: monospace; }
     .doc-link {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--primary);
       text-decoration: none;
       display: inline-block;
@@ -104,49 +104,75 @@
       font-weight: bold;
     }
 
-    /* 單手提示標籤 */
-    .tip-toast {
+    /* 方案 A 控制區：左側固定搖桿 + 右側清晰雙技能鍵 */
+    .controls-layer {
       position: absolute;
-      bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      backdrop-filter: blur(8px);
-      color: #94a3b8;
-      font-size: 11px;
-      padding: 6px 16px;
-      border-radius: 20px;
-      pointer-events: none;
-      z-index: 10;
-      white-space: nowrap;
-    }
-    .tip-toast strong { color: var(--primary); }
-
-    /* 動態跟隨虛擬搖桿 (支援任意點觸控生成) */
-    #dynamic-joy {
-      position: absolute;
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.08), rgba(255, 255, 255, 0.02));
-      border: 1.5px dashed rgba(56, 189, 248, 0.35);
-      pointer-events: none;
-      display: none;
+      bottom: env(safe-area-inset-bottom, 20px);
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
       z-index: 20;
-      transform: translate(-50%, -50%);
+      pointer-events: none;
     }
-    #dynamic-knob {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 44px;
-      height: 44px;
+    #joystick-base {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px dashed rgba(56, 189, 248, 0.4);
+      position: relative;
+      pointer-events: auto;
+      backdrop-filter: blur(4px);
+    }
+    #joystick-stick {
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       background: radial-gradient(circle, var(--primary), #0284c7);
-      box-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
-      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+      position: absolute;
+      top: 29px;
+      left: 29px;
+      pointer-events: none;
+      transform: translate(0px, 0px);
+      transition: transform 0.05s ease-out;
     }
+    .action-buttons {
+      display: flex;
+      gap: 14px;
+      pointer-events: auto;
+    }
+    .btn-action {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn-action:active { transform: scale(0.9); }
+    .btn-action.disabled {
+      filter: grayscale(0.9);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .btn-echo {
+      background: radial-gradient(circle, #ec4899, #be185d);
+      box-shadow: 0 0 16px rgba(236, 72, 153, 0.6);
+    }
+    .btn-swap {
+      background: radial-gradient(circle, #facc15, #ca8a04);
+      box-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
+    }
+    .btn-icon { font-size: 20px; }
+    .btn-lbl { font-size: 9px; font-weight: 800; color: #fff; margin-top: 1px; }
 
     /* 升級三選一彈窗 */
     .upgrade-modal {
@@ -166,29 +192,29 @@
     }
     .upgrade-modal.active { display: flex; }
     .upgrade-title {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 900;
       color: var(--gold);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       text-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
     }
     .card-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
-      max-width: 380px;
+      max-width: 360px;
     }
     .upgrade-card {
       background: #1e293b;
       border: 2px solid #334155;
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 14px;
       cursor: pointer;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
     .upgrade-card:hover, .upgrade-card:active {
       border-color: var(--primary);
@@ -196,9 +222,9 @@
       background: #243248;
       box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
     }
-    .card-icon { font-size: 32px; }
-    .card-info h4 { font-size: 15px; color: #fff; margin-bottom: 4px; }
-    .card-info p { font-size: 12px; color: #94a3b8; }
+    .card-icon { font-size: 28px; }
+    .card-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
+    .card-info p { font-size: 11px; color: #94a3b8; }
 
     /* 遊戲結束彈窗 */
     .gameover-modal {
@@ -219,13 +245,13 @@
     }
     .gameover-modal.active { display: flex; }
     .btn-restart {
-      margin-top: 20px;
+      margin-top: 18px;
       background: var(--primary);
       color: #0b0f19;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
-      padding: 12px 32px;
-      border-radius: 10px;
+      padding: 10px 28px;
+      border-radius: 8px;
       border: none;
       cursor: pointer;
     }
@@ -253,14 +279,21 @@
     </div>
   </div>
 
-  <!-- 操作指引提示 -->
-  <div class="tip-toast">
-    👆 <strong>雙擊螢幕</strong>：回溯召喚殘像 ｜ 🎯 <strong>點擊殘像</strong>：飛雷神換位 ｜ 🖐️ <strong>鬆手</strong>：定點射擊
-  </div>
-
-  <!-- 動態跟隨搖桿 -->
-  <div id="dynamic-joy">
-    <div id="dynamic-knob"></div>
+  <!-- 方案 A 控制層：左搖桿 + 右側清晰雙鍵 -->
+  <div class="controls-layer">
+    <div id="joystick-base">
+      <div id="joystick-stick"></div>
+    </div>
+    <div class="action-buttons">
+      <button id="btn-echo" class="btn-action btn-echo">
+        <span class="btn-icon">⏳</span>
+        <span class="btn-lbl" id="echo-lbl">回溯</span>
+      </button>
+      <button id="btn-swap" class="btn-action btn-swap disabled">
+        <span class="btn-icon">🔀</span>
+        <span class="btn-lbl">換位</span>
+      </button>
+    </div>
   </div>
 
   <!-- 升級彈窗 -->
@@ -271,9 +304,9 @@
 
   <!-- 結算彈窗 -->
   <div id="gameover-modal" class="gameover-modal">
-    <h2 style="font-size: 28px; color: #ef4444; margin-bottom: 8px;">💀 時空線崩塌</h2>
-    <p style="color: #94a3b8; font-size: 14px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
-    <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
+    <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">💀 時空線崩塌</h2>
+    <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
+    <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
     <button class="btn-restart" onclick="location.reload()">🔄 重啟時間線</button>
   </div>
 
@@ -282,7 +315,6 @@
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
 
-    // 視窗自適應
     let width = 0, height = 0;
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -299,7 +331,7 @@
       kills: 0,
       level: 1,
       exp: 0,
-      maxExp: 10,
+      maxExp: 8,
       shake: 0
     };
 
@@ -318,56 +350,56 @@
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
-      },
-      playHit() {
-        if (!this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(750, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
+      playHit() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.06);
+      },
       playRewind() {
         if (!this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(1000, this.ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.3);
+        osc.stop(this.ctx.currentTime + 0.25);
       },
       playSwap() {
         if (!this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime + 0.06);
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+        osc.frequency.setValueAtTime(380, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(760, this.ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.12);
+        osc.stop(this.ctx.currentTime + 0.1);
       },
       playGem() {
         if (!this.ctx) return;
@@ -375,15 +407,16 @@
         const gain = this.ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(900, this.ctx.currentTime);
-        osc.frequency.setValueAtTime(1400, this.ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(1400, this.ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        osc.stop(this.ctx.currentTime + 0.08);
       }
     };
+
     // --- 瀏覽器原生長按與雙擊手勢全面防禦 ---
     document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
     ['gesturestart', 'gesturechange', 'gestureend'].forEach(evt => {
@@ -397,29 +430,29 @@
     document.addEventListener('touchstart', e => {
       const now = Date.now();
       if (now - lastBrowserTouchTime <= 350 && e.cancelable) {
-        e.preventDefault(); // 徹底阻斷 iOS Safari 原生雙擊 Viewport Zoom
+        e.preventDefault();
       }
       lastBrowserTouchTime = now;
     }, { passive: false });
 
-    // 玩家配置
+    // 玩家配置 (半徑由 16px 縮減至 10px，視野擴大 2.5 倍)
     const player = {
       x: width / 2,
       y: height / 2,
-      radius: 16,
-      speed: 3.2,
+      radius: 10,
+      speed: 2.8,
       hp: 100,
       maxHp: 100,
       attackCd: 0,
-      attackSpeed: 18,
+      attackSpeed: 16,
       shootCount: 1,
       invulnerable: 0,
       echoCd: 0,
-      maxEchoCd: 240, // 4 秒 CD
-      maxEchoCount: 2, // 支援最多 2 個殘像（連成三角形結界！）
+      maxEchoCd: 240, // 4 秒
+      maxEchoCount: 2,
       history: [],
-      maxHistory: 180, // 3 秒歷史
-      resonanceDmg: 0.8,
+      maxHistory: 180,
+      resonanceDmg: 0.9,
       orbitalBlade: 0,
       bladeAngle: 0
     };
@@ -437,175 +470,151 @@
     window.addEventListener('keydown', e => {
       keys[e.key.toLowerCase()] = true;
       if (e.code === 'Space') triggerEcho();
-      if (e.key.toLowerCase() === 'q') swapWithFirstEcho();
+      if (e.key.toLowerCase() === 'q') triggerSwap();
     });
     window.addEventListener('keyup', e => {
       keys[e.key.toLowerCase()] = false;
     });
 
-    // --- 極致單手手勢系統 (全螢幕動態搖桿 + 雙擊回溯 + 點擊殘像換位) ---
-    const joyContainer = document.getElementById('dynamic-joy');
-    const joyKnob = document.getElementById('dynamic-knob');
-    let touchOrigin = null;
+    // --- 方案 A：左側固定搖桿控制 ---
+    const joyBase = document.getElementById('joystick-base');
+    const joyStick = document.getElementById('joystick-stick');
+    let joyTouchId = null;
+    let joyOrigin = null;
     let joyVec = { x: 0, y: 0 };
-    let lastTapTime = 0;
-    let touchStartTime = 0;
-    let activePointerId = null;
 
-    window.addEventListener('pointerdown', e => {
-      // 排除 UI 點擊
-      if (e.target.closest('.hud-right') || e.target.closest('.upgrade-modal') || e.target.closest('.gameover-modal')) return;
+    joyBase.addEventListener('pointerdown', e => {
       AudioEngine.init();
-
-      const now = performance.now();
-      const clickX = e.clientX;
-      const clickY = e.clientY;
-
-      // 1. 檢測是否點擊在「場上的殘像」周圍（換位 Swap 判定，容錯半徑 45px）
-      let clickedEcho = null;
-      for (const ec of echoes) {
-        if (Math.hypot(clickX - ec.x, clickY - ec.y) < player.radius + 35) {
-          clickedEcho = ec;
-          break;
-        }
-      }
-
-      if (clickedEcho) {
-        // 執行換位！
-        swapWithEcho(clickedEcho);
-        return;
-      }
-
-      // 2. 檢測是否為「雙擊（Double Tap）」回溯
-      if (now - lastTapTime < 280) {
-        triggerEcho();
-        lastTapTime = 0; // 重置防止三連擊
-        return;
-      }
-      lastTapTime = now;
-
-      // 3. 正常搖桿啟動（在手指按下的位置動態生成搖桿）
-      activePointerId = e.pointerId;
-      touchStartTime = now;
-      touchOrigin = { x: clickX, y: clickY };
-      joyVec = { x: 0, y: 0 };
-
-      joyContainer.style.left = `${clickX}px`;
-      joyContainer.style.top = `${clickY}px`;
-      joyKnob.style.transform = 'translate(-50%, -50%)';
-      joyContainer.style.display = 'block';
+      joyBase.setPointerCapture(e.pointerId);
+      joyTouchId = e.pointerId;
+      const rect = joyBase.getBoundingClientRect();
+      joyOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      handleJoyDrag(e);
     });
 
-    window.addEventListener('pointermove', e => {
-      if (touchOrigin && e.pointerId === activePointerId) {
-        const dx = e.clientX - touchOrigin.x;
-        const dy = e.clientY - touchOrigin.y;
-        const dist = Math.hypot(dx, dy);
-        const maxR = 40;
-        const angle = Math.atan2(dy, dx);
-        const clamped = Math.min(dist, maxR);
-
-        joyVec.x = (clamped / maxR) * Math.cos(angle);
-        joyVec.y = (clamped / maxR) * Math.sin(angle);
-
-        joyKnob.style.transform = `translate(calc(-50% + ${Math.cos(angle) * clamped}px), calc(-50% + ${Math.sin(angle) * clamped}px))`;
+    joyBase.addEventListener('pointermove', e => {
+      if (joyOrigin && e.pointerId === joyTouchId) {
+        handleJoyDrag(e);
       }
     });
 
-    function resetTouch() {
-      touchOrigin = null;
-      activePointerId = null;
-      joyVec = { x: 0, y: 0 };
-      joyContainer.style.display = 'none';
+    function endJoyDrag(e) {
+      if (e.pointerId === joyTouchId) {
+        joyTouchId = null;
+        joyOrigin = null;
+        joyVec = { x: 0, y: 0 };
+        joyStick.style.transform = 'translate(0px, 0px)';
+      }
     }
-    window.addEventListener('pointerup', resetTouch);
-    window.addEventListener('pointercancel', resetTouch);
+    joyBase.addEventListener('pointerup', endJoyDrag);
+    joyBase.addEventListener('pointercancel', endJoyDrag);
 
-    // 觸發時空裂影回溯
+    function handleJoyDrag(e) {
+      const dx = e.clientX - joyOrigin.x;
+      const dy = e.clientY - joyOrigin.y;
+      const dist = Math.hypot(dx, dy);
+      const maxR = 32;
+      const angle = Math.atan2(dy, dx);
+      const clamped = Math.min(dist, maxR);
+
+      joyVec.x = (clamped / maxR) * Math.cos(angle);
+      joyVec.y = (clamped / maxR) * Math.sin(angle);
+
+      joyStick.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
+    }
+
+    // --- 方案 A：右側按鈕點擊 ---
+    const btnEcho = document.getElementById('btn-echo');
+    const btnSwap = document.getElementById('btn-swap');
+
+    btnEcho.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      AudioEngine.init();
+      triggerEcho();
+    });
+
+    btnSwap.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      AudioEngine.init();
+      triggerSwap();
+    });
+
+    // 觸發回溯
     function triggerEcho() {
-      if (player.echoCd > 0 || player.history.length < 25) return;
+      if (player.echoCd > 0 || player.history.length < 20) return;
       AudioEngine.playRewind();
-      STATE.shake = 10;
+      STATE.shake = 8;
 
-      // 取得 3 秒前狀態
       const oldState = player.history[0];
       const recordedActions = [...player.history];
 
-      // 若達到殘像上限，移除最早生成的殘像
       if (echoes.length >= player.maxEchoCount) {
         echoes.shift();
       }
 
-      // 生成殘像 (在目前位置留存)
       echoes.push({
         frames: recordedActions,
         currentFrame: 0,
         x: player.x,
         y: player.y,
-        alpha: 0.85,
         maxLife: recordedActions.length
       });
 
-      // 玩家瞬移回 3 秒前
       player.x = oldState.x;
       player.y = oldState.y;
-      player.invulnerable = 40; // 0.65 秒無敵
+      player.invulnerable = 35;
       player.echoCd = player.maxEchoCd;
-      player.history = []; // 重置當前軌跡
+      player.history = [];
 
-      // 躍遷粒子
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 16; i++) {
         const ang = Math.random() * Math.PI * 2;
-        const spd = 2 + Math.random() * 4;
+        const spd = 1.5 + Math.random() * 3;
         particles.push({
           x: player.x, y: player.y,
           vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
-          life: 25, color: '#38bdf8', size: 3
+          life: 20, color: '#38bdf8', size: 2
         });
       }
     }
 
-    // 與指定殘像換位 (Swap)
-    function swapWithEcho(targetEcho) {
+    // 觸發換位
+    function triggerSwap() {
+      if (echoes.length === 0) return;
       AudioEngine.playSwap();
-      STATE.shake = 8;
+      STATE.shake = 6;
 
+      // 與最新或唯一的殘像換位
+      const targetEcho = echoes[echoes.length - 1];
       const px = player.x;
       const py = player.y;
 
-      // 交換座標
       player.x = targetEcho.x;
       player.y = targetEcho.y;
       targetEcho.x = px;
       targetEcho.y = py;
 
-      player.invulnerable = 20; // 換位給予 0.3 秒無敵
+      player.invulnerable = 20;
 
-      // 在兩點之間產生換位時空裂縫粒子
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 12; i++) {
         const t = Math.random();
         particles.push({
           x: px + (player.x - px) * t,
           y: py + (player.y - py) * t,
-          vx: (Math.random() - 0.5) * 3,
-          vy: (Math.random() - 0.5) * 3,
-          life: 20, color: '#facc15', size: 3.5
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          life: 18, color: '#facc15', size: 2.5
         });
       }
-    }
-
-    function swapWithFirstEcho() {
-      if (echoes.length > 0) swapWithEcho(echoes[0]);
     }
 
     // 升級天賦
     const UPGRADES = [
       { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: '🔫', apply: () => player.shootCount++ },
-      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: '⚡', apply: () => player.attackSpeed = Math.max(8, player.attackSpeed * 0.75) },
+      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: '⚡', apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75) },
       { id: 'resonance', title: '共振光刃', desc: '殘像連線/結界雷射傷害 +50%', icon: '💠', apply: () => player.resonanceDmg += 0.5 },
-      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（拉出多邊形三角殺陣！）', icon: '👥', apply: () => player.maxEchoCount++ },
+      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（解鎖三角形多維殺陣！）', icon: '👥', apply: () => player.maxEchoCount++ },
       { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: '🌀', apply: () => player.orbitalBlade++ },
-      { id: 'cooldown', title: '時空壓縮', desc: '裂影回溯冷卻時間 -25%', icon: '⏳', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
+      { id: 'cooldown', title: '時空壓縮', desc: '回溯冷卻時間 -25%', icon: '⏳', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
       { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: '💖', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
     ];
 
@@ -643,7 +652,7 @@
       frameCount++;
       STATE.gameTime++;
 
-      // 1. 移動計算 (手指鬆開時 joyVec 為 0，本體原地停下)
+      // 1. 移動計算 (放手時即原地停下)
       let moveX = 0, moveY = 0;
       if (keys['w'] || keys['arrowup']) moveY -= 1;
       if (keys['s'] || keys['arrowdown']) moveY += 1;
@@ -654,7 +663,7 @@
         const len = Math.hypot(moveX, moveY);
         moveX = (moveX / len) * player.speed;
         moveY = (moveY / len) * player.speed;
-      } else if (touchOrigin) {
+      } else if (joyOrigin) {
         moveX = joyVec.x * player.speed;
         moveY = joyVec.y * player.speed;
       }
@@ -662,17 +671,16 @@
       player.x = Math.max(player.radius, Math.min(width - player.radius, player.x + moveX));
       player.y = Math.max(player.radius, Math.min(height - player.radius, player.y + moveY));
 
-      // 紀錄軌跡 (Ring Buffer)
+      // 紀錄歷史
       player.history.push({ x: player.x, y: player.y, shooting: player.attackCd <= 0 });
       if (player.history.length > player.maxHistory) {
         player.history.shift();
       }
 
-      // 冷卻計時
       if (player.invulnerable > 0) player.invulnerable--;
       if (player.echoCd > 0) player.echoCd--;
 
-      // 2. 自動射擊最近敵人
+      // 2. 自動射擊
       player.attackCd--;
       if (player.attackCd <= 0 && enemies.length > 0) {
         let nearest = null, minDist = Infinity;
@@ -682,14 +690,14 @@
         }
         if (nearest) {
           const baseAng = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-          const spread = 0.15;
+          const spread = 0.14;
           const startOffset = -(player.shootCount - 1) * spread / 2;
           for (let i = 0; i < player.shootCount; i++) {
             const ang = baseAng + startOffset + i * spread;
             bullets.push({
               x: player.x, y: player.y,
-              vx: Math.cos(ang) * 9, vy: Math.sin(ang) * 9,
-              damage: 18, life: 60, isEcho: false
+              vx: Math.cos(ang) * 8.5, vy: Math.sin(ang) * 8.5,
+              damage: 18, life: 55, isEcho: false
             });
           }
           AudioEngine.playLaser();
@@ -697,7 +705,7 @@
         }
       }
 
-      // 3. 殘像更新與重播
+      // 3. 殘像更新
       for (let i = echoes.length - 1; i >= 0; i--) {
         const ec = echoes[i];
         if (ec.currentFrame < ec.frames.length) {
@@ -706,7 +714,6 @@
           ec.y = record.y;
           ec.currentFrame++;
 
-          // 殘像自動開火
           if (record.shooting && enemies.length > 0) {
             let nearest = null, minDist = Infinity;
             for (const e of enemies) {
@@ -717,64 +724,60 @@
               const ang = Math.atan2(nearest.y - ec.y, nearest.x - ec.x);
               bullets.push({
                 x: ec.x, y: ec.y,
-                vx: Math.cos(ang) * 8, vy: Math.sin(ang) * 8,
-                damage: 14, life: 55, isEcho: true
+                vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
+                damage: 14, life: 50, isEcho: true
               });
             }
           }
         } else {
-          // 殘像消散
-          for (let p = 0; p < 18; p++) {
+          for (let p = 0; p < 12; p++) {
             const ang = Math.random() * Math.PI * 2;
             particles.push({
               x: ec.x, y: ec.y,
-              vx: Math.cos(ang) * 4, vy: Math.sin(ang) * 4,
-              life: 25, color: '#a855f7', size: 3
+              vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
+              life: 20, color: '#a855f7', size: 2
             });
           }
           echoes.splice(i, 1);
         }
       }
 
-      // 殘像雷射割裂與多邊形結界判定
+      // 殘像雷射割裂與結界判定 (縮小碰撞容錯)
       if (echoes.length === 1) {
-        // 單殘像：直線雷射
         const ec = echoes[0];
         for (const enemy of enemies) {
-          if (pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y) < enemy.radius + 6) {
+          if (pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y) < enemy.radius + 4) {
             enemy.hp -= player.resonanceDmg;
             enemy.flash = 2;
           }
         }
       } else if (echoes.length >= 2) {
-        // 雙殘像以上：三角形/多邊形封閉結界！
         const poly = [{ x: player.x, y: player.y }, ...echoes.map(e => ({ x: e.x, y: e.y }))];
         for (const enemy of enemies) {
-          // 檢查怪物是否在多邊形內部
           if (isPointInPolygon({ x: enemy.x, y: enemy.y }, poly)) {
-            enemy.hp -= player.resonanceDmg * 1.5; // 結界內部 1.5 倍高頻湮滅傷害
+            enemy.hp -= player.resonanceDmg * 1.5;
             enemy.flash = 2;
-            if (Math.random() < 0.25) {
+            if (Math.random() < 0.2) {
               particles.push({
                 x: enemy.x, y: enemy.y,
-                vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
-                life: 12, color: '#facc15', size: 2.5
+                vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3,
+                life: 10, color: '#facc15', size: 1.8
               });
             }
           }
         }
       }
 
-      // 軌道光刃
+      // 軌道光刃 (縮小環繞半徑至 40px)
       if (player.orbitalBlade > 0) {
         player.bladeAngle += 0.05;
-        const bladeDist = 55;
+        const bladeDist = 40;
         for (let b = 0; b < player.orbitalBlade; b++) {
           const ang = player.bladeAngle + (b * (Math.PI * 2 / player.orbitalBlade));
           const bx = player.x + Math.cos(ang) * bladeDist;
           const by = player.y + Math.sin(ang) * bladeDist;
           for (const e of enemies) {
-            if (Math.hypot(e.x - bx, e.y - by) < e.radius + 10) {
+            if (Math.hypot(e.x - bx, e.y - by) < e.radius + 7) {
               e.hp -= 1.2;
               e.flash = 2;
             }
@@ -782,7 +785,7 @@
         }
       }
 
-      // 4. 子彈更新
+      // 4. 子彈更新 (縮小半徑)
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.x += b.vx;
@@ -790,11 +793,11 @@
         b.life--;
 
         for (const e of enemies) {
-          if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 4) {
+          if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 3) {
             e.hp -= b.damage;
             e.flash = 3;
             AudioEngine.playHit();
-            popups.push({ x: e.x, y: e.y - 10, text: b.damage, life: 25, color: b.isEcho ? '#ec4899' : '#38bdf8' });
+            popups.push({ x: e.x, y: e.y - 8, text: b.damage, life: 20, color: b.isEcho ? '#ec4899' : '#38bdf8' });
             b.life = 0;
             break;
           }
@@ -802,22 +805,22 @@
         if (b.life <= 0) bullets.splice(i, 1);
       }
 
-      // 5. 怪物生成與更新
-      const spawnInterval = Math.max(20, 65 - Math.floor(STATE.gameTime / 300));
+      // 5. 怪物生成 (怪物半徑縮減為 8px，邊界出生距離拉大至 40px)
+      const spawnInterval = Math.max(18, 60 - Math.floor(STATE.gameTime / 300));
       if (frameCount % spawnInterval === 0) {
         const edge = Math.floor(Math.random() * 4);
         let ex = 0, ey = 0;
-        if (edge === 0) { ex = Math.random() * width; ey = -20; }
-        else if (edge === 1) { ex = width + 20; ey = Math.random() * height; }
-        else if (edge === 2) { ex = Math.random() * width; ey = height + 20; }
-        else { ex = -20; ey = Math.random() * height; }
+        if (edge === 0) { ex = Math.random() * width; ey = -40; }
+        else if (edge === 1) { ex = width + 40; ey = Math.random() * height; }
+        else if (edge === 2) { ex = Math.random() * width; ey = height + 40; }
+        else { ex = -40; ey = Math.random() * height; }
 
         enemies.push({
           x: ex, y: ey,
-          radius: 13,
-          speed: 1.2 + Math.random() * 0.8,
-          hp: 25 + Math.floor(STATE.gameTime / 400) * 10,
-          maxHp: 25 + Math.floor(STATE.gameTime / 400) * 10,
+          radius: 8,
+          speed: 1.1 + Math.random() * 0.7,
+          hp: 22 + Math.floor(STATE.gameTime / 400) * 8,
+          maxHp: 22 + Math.floor(STATE.gameTime / 400) * 8,
           flash: 0
         });
       }
@@ -826,7 +829,6 @@
         const e = enemies[i];
         if (e.flash > 0) e.flash--;
 
-        // 追逐目標（殘像存在時有 50% 機率被殘像吸引）
         let target = player;
         if (echoes.length > 0 && i % 2 === 0) {
           target = echoes[0];
@@ -836,12 +838,11 @@
         e.x += Math.cos(angle) * e.speed;
         e.y += Math.sin(angle) * e.speed;
 
-        // 撞擊玩家
         if (Math.hypot(e.x - player.x, e.y - player.y) < e.radius + player.radius) {
           if (player.invulnerable <= 0) {
             player.hp -= 12;
             player.invulnerable = 30;
-            STATE.shake = 8;
+            STATE.shake = 6;
             AudioEngine.playHit();
             if (player.hp <= 0) {
               player.hp = 0;
@@ -850,38 +851,37 @@
           }
         }
 
-        // 怪物死亡
         if (e.hp <= 0) {
           STATE.kills++;
           gems.push({ x: e.x, y: e.y, exp: 2 });
-          for (let p = 0; p < 8; p++) {
+          for (let p = 0; p < 6; p++) {
             const ang = Math.random() * Math.PI * 2;
             particles.push({
               x: e.x, y: e.y,
-              vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
-              life: 20, color: '#f43f5e', size: 2.5
+              vx: Math.cos(ang) * 2.5, vy: Math.sin(ang) * 2.5,
+              life: 16, color: '#f43f5e', size: 1.8
             });
           }
           enemies.splice(i, 1);
         }
       }
 
-      // 6. 經驗晶體拾取
+      // 6. 經驗晶體
       for (let i = gems.length - 1; i >= 0; i--) {
         const g = gems[i];
         const dist = Math.hypot(player.x - g.x, player.y - g.y);
-        if (dist < 120) {
+        if (dist < 100) {
           const ang = Math.atan2(player.y - g.y, player.x - g.x);
-          g.x += Math.cos(ang) * 6;
-          g.y += Math.sin(ang) * 6;
+          g.x += Math.cos(ang) * 5.5;
+          g.y += Math.sin(ang) * 5.5;
         }
-        if (dist < player.radius + 8) {
+        if (dist < player.radius + 6) {
           STATE.exp += g.exp;
           AudioEngine.playGem();
           if (STATE.exp >= STATE.maxExp) {
             STATE.level++;
             STATE.exp -= STATE.maxExp;
-            STATE.maxExp = Math.floor(STATE.maxExp * 1.4);
+            STATE.maxExp = Math.floor(STATE.maxExp * 1.35);
             showUpgradeModal();
           }
           gems.splice(i, 1);
@@ -898,12 +898,12 @@
       }
       for (let i = popups.length - 1; i >= 0; i--) {
         const pu = popups[i];
-        pu.y -= 0.8;
+        pu.y -= 0.6;
         pu.life--;
         if (pu.life <= 0) popups.splice(i, 1);
       }
 
-      // 8. 更新 DOM UI
+      // 8. 更新 DOM UI 與按鈕冷卻狀態
       document.getElementById('hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
       document.getElementById('exp-bar').style.width = `${(STATE.exp / STATE.maxExp) * 100}%`;
       document.getElementById('level-num').innerText = STATE.level;
@@ -913,9 +913,25 @@
       const mm = String(Math.floor(sec / 60)).padStart(2, '0');
       const ss = String(sec % 60).padStart(2, '0');
       document.getElementById('time-display').innerText = `${mm}:${ss}`;
+
+      // 按鈕狀態反饋
+      const echoLbl = document.getElementById('echo-lbl');
+      if (player.echoCd > 0) {
+        btnEcho.classList.add('disabled');
+        echoLbl.innerText = `${(player.echoCd / 60).toFixed(1)}s`;
+      } else {
+        btnEcho.classList.remove('disabled');
+        echoLbl.innerText = '回溯';
+      }
+
+      if (echoes.length > 0) {
+        btnSwap.classList.remove('disabled');
+      } else {
+        btnSwap.classList.add('disabled');
+      }
     }
 
-    // 幾何計算工具
+    // 幾何工具
     function pointToSegmentDist(px, py, x1, y1, x2, y2) {
       const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
       if (l2 === 0) return Math.hypot(px - x1, py - y1);
@@ -947,10 +963,10 @@
 
       ctx.clearRect(0, 0, width, height);
 
-      // 背景網格
-      ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
-      ctx.lineWidth = 1;
-      const gridSize = 40;
+      // 細緻背景網格 (縮小至 28px)
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
+      ctx.lineWidth = 0.8;
+      const gridSize = 28;
       for (let x = 0; x < width; x += gridSize) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
       }
@@ -958,15 +974,14 @@
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
       }
 
-      // 1. 繪製殘像與結界
+      // 1. 殘像結界與連線
       if (echoes.length >= 2) {
-        // 多邊形半透明結界覆蓋
         ctx.save();
-        ctx.fillStyle = 'rgba(236, 72, 153, 0.15)';
+        ctx.fillStyle = 'rgba(236, 72, 153, 0.12)';
         ctx.strokeStyle = '#ec4899';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 1.8;
         ctx.shadowColor = '#ec4899';
-        ctx.shadowBlur = 16;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.moveTo(player.x, player.y);
         for (const ec of echoes) {
@@ -977,12 +992,11 @@
         ctx.stroke();
         ctx.restore();
       } else if (echoes.length === 1) {
-        // 單條連線雷射
         ctx.save();
         ctx.strokeStyle = '#ec4899';
-        ctx.lineWidth = 3 + Math.sin(frameCount * 0.2) * 1.5;
+        ctx.lineWidth = 2 + Math.sin(frameCount * 0.2) * 1;
         ctx.shadowColor = '#ec4899';
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.moveTo(player.x, player.y);
         ctx.lineTo(echoes[0].x, echoes[0].y);
@@ -990,56 +1004,41 @@
         ctx.restore();
       }
 
-      // 殘像本體與換位指示圈
+      // 殘像實體 (半徑 10px)
       for (const ec of echoes) {
         ctx.save();
-        // 外層換位提示呼吸圈
-        ctx.strokeStyle = 'rgba(250, 204, 21, 0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.arc(ec.x, ec.y, player.radius + 10 + Math.sin(frameCount * 0.15) * 3, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // 殘像主體
         ctx.fillStyle = 'rgba(236, 72, 153, 0.45)';
         ctx.strokeStyle = '#ec4899';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.8;
         ctx.shadowColor = '#ec4899';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.arc(ec.x, ec.y, player.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-
-        // 換位圖示
-        ctx.font = '10px sans-serif';
-        ctx.fillStyle = '#facc15';
-        ctx.textAlign = 'center';
-        ctx.fillText('SWAP', ec.x, ec.y - player.radius - 14);
         ctx.restore();
       }
 
-      // 2. 經驗晶體
+      // 2. 經驗晶體 (微型 2.8px)
       for (const g of gems) {
         ctx.save();
         ctx.fillStyle = '#38bdf8';
         ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 6;
         ctx.beginPath();
-        ctx.arc(g.x, g.y, 4, 0, Math.PI * 2);
+        ctx.arc(g.x, g.y, 2.8, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
 
-      // 3. 怪物
+      // 3. 怪物 (縮小至 8px)
       for (const e of enemies) {
         ctx.save();
         ctx.fillStyle = e.flash > 0 ? '#fff' : '#f43f5e';
         ctx.strokeStyle = '#9f1239';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.5;
         ctx.shadowColor = '#f43f5e';
-        ctx.shadowBlur = e.flash > 0 ? 12 : 4;
+        ctx.shadowBlur = e.flash > 0 ? 8 : 3;
         ctx.beginPath();
         ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -1047,28 +1046,28 @@
 
         if (e.hp < e.maxHp) {
           ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.fillRect(e.x - 12, e.y - 18, 24, 4);
+          ctx.fillRect(e.x - 9, e.y - 13, 18, 3);
           ctx.fillStyle = '#ef4444';
-          ctx.fillRect(e.x - 12, e.y - 18, (e.hp / e.maxHp) * 24, 4);
+          ctx.fillRect(e.x - 9, e.y - 13, (e.hp / e.maxHp) * 18, 3);
         }
         ctx.restore();
       }
 
-      // 4. 子彈
+      // 4. 子彈 (2.5px)
       for (const b of bullets) {
         ctx.save();
         ctx.fillStyle = b.isEcho ? '#ec4899' : '#38bdf8';
         ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 6;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, 3.5, 0, Math.PI * 2);
+        ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
 
       // 5. 軌道光刃
       if (player.orbitalBlade > 0) {
-        const bladeDist = 55;
+        const bladeDist = 40;
         for (let b = 0; b < player.orbitalBlade; b++) {
           const ang = player.bladeAngle + (b * (Math.PI * 2 / player.orbitalBlade));
           const bx = player.x + Math.cos(ang) * bladeDist;
@@ -1076,24 +1075,24 @@
           ctx.save();
           ctx.fillStyle = '#facc15';
           ctx.shadowColor = '#facc15';
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 8;
           ctx.beginPath();
-          ctx.arc(bx, by, 6, 0, Math.PI * 2);
+          ctx.arc(bx, by, 4.5, 0, Math.PI * 2);
           ctx.fill();
           ctx.restore();
         }
       }
 
-      // 6. 玩家本體
+      // 6. 玩家本體 (半徑 10px)
       ctx.save();
       if (player.invulnerable > 0 && Math.floor(frameCount / 4) % 2 === 0) {
         ctx.globalAlpha = 0.5;
       }
       ctx.fillStyle = '#38bdf8';
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2;
       ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = 14;
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fill();
@@ -1101,7 +1100,7 @@
 
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(player.x, player.y, 6, 0, Math.PI * 2);
+      ctx.arc(player.x, player.y, 4, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
@@ -1109,7 +1108,7 @@
       for (const p of particles) {
         ctx.save();
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 25;
+        ctx.globalAlpha = p.life / 20;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
@@ -1119,9 +1118,9 @@
       // 8. 傷害飄字
       for (const pu of popups) {
         ctx.save();
-        ctx.font = 'bold 12px monospace';
+        ctx.font = 'bold 11px monospace';
         ctx.fillStyle = pu.color;
-        ctx.globalAlpha = pu.life / 25;
+        ctx.globalAlpha = pu.life / 20;
         ctx.fillText(`-${pu.text}`, pu.x, pu.y);
         ctx.restore();
       }
@@ -1140,7 +1139,6 @@
       modal.classList.add('active');
     }
 
-    // 遊戲循環
     function loop() {
       update();
       render();
