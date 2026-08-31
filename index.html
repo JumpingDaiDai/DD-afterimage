@@ -501,42 +501,71 @@
       keys[e.key.toLowerCase()] = false;
     });
 
-    // --- 方案 A：左側固定搖桿控制 ---
+    // --- 方案 A：左側固定搖桿控制 (嚴格使用 Touch 事件並主動 preventDefault 徹底封殺 iOS 放大鏡) ---
     const joyBase = document.getElementById('joystick-base');
     const joyStick = document.getElementById('joystick-stick');
     let joyTouchId = null;
     let joyOrigin = null;
     let joyVec = { x: 0, y: 0 };
 
-    joyBase.addEventListener('pointerdown', e => {
+    joyBase.addEventListener('touchstart', e => {
+      e.preventDefault(); // 阻斷 iOS Safari 長按放大鏡與選取
       AudioEngine.init();
-      joyBase.setPointerCapture(e.pointerId);
-      joyTouchId = e.pointerId;
+      const touch = e.changedTouches[0];
+      joyTouchId = touch.identifier;
       const rect = joyBase.getBoundingClientRect();
       joyOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      handleJoyDrag(e);
-    });
+      handleJoyDrag(touch);
+    }, { passive: false });
 
-    joyBase.addEventListener('pointermove', e => {
-      if (joyOrigin && e.pointerId === joyTouchId) {
-        handleJoyDrag(e);
+    joyBase.addEventListener('touchmove', e => {
+      e.preventDefault(); // 阻斷滾動與長按
+      if (joyOrigin) {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === joyTouchId) {
+            handleJoyDrag(e.changedTouches[i]);
+            break;
+          }
+        }
       }
-    });
+    }, { passive: false });
 
     function endJoyDrag(e) {
-      if (e.pointerId === joyTouchId) {
-        joyTouchId = null;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+          joyTouchId = null;
+          joyOrigin = null;
+          joyVec = { x: 0, y: 0 };
+          joyStick.style.transform = 'translate(0px, 0px)';
+          break;
+        }
+      }
+    }
+    joyBase.addEventListener('touchend', endJoyDrag, { passive: false });
+    joyBase.addEventListener('touchcancel', endJoyDrag, { passive: false });
+
+    // 電腦端滑鼠相容
+    joyBase.addEventListener('mousedown', e => {
+      e.preventDefault();
+      AudioEngine.init();
+      const rect = joyBase.getBoundingClientRect();
+      joyOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      const onMouseMove = (me) => handleJoyDrag(me);
+      const onMouseUp = () => {
         joyOrigin = null;
         joyVec = { x: 0, y: 0 };
         joyStick.style.transform = 'translate(0px, 0px)';
-      }
-    }
-    joyBase.addEventListener('pointerup', endJoyDrag);
-    joyBase.addEventListener('pointercancel', endJoyDrag);
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+      handleJoyDrag(e);
+    });
 
-    function handleJoyDrag(e) {
-      const dx = e.clientX - joyOrigin.x;
-      const dy = e.clientY - joyOrigin.y;
+    function handleJoyDrag(pos) {
+      const dx = pos.clientX - joyOrigin.x;
+      const dy = pos.clientY - joyOrigin.y;
       const dist = Math.hypot(dx, dy);
       const maxR = 32;
       const angle = Math.atan2(dy, dx);
@@ -552,15 +581,26 @@
     const btnEcho = document.getElementById('btn-echo');
     const btnSwap = document.getElementById('btn-swap');
 
-    btnEcho.addEventListener('pointerdown', e => {
+    btnEcho.addEventListener('touchstart', e => {
+      e.preventDefault();
       e.stopPropagation();
       AudioEngine.init();
       triggerEcho();
-    });
+    }, { passive: false });
 
-    btnSwap.addEventListener('pointerdown', e => {
+    btnSwap.addEventListener('touchstart', e => {
+      e.preventDefault();
       e.stopPropagation();
       AudioEngine.init();
+      triggerSwap();
+    }, { passive: false });
+
+    btnEcho.addEventListener('click', e => {
+      e.preventDefault();
+      triggerEcho();
+    });
+    btnSwap.addEventListener('click', e => {
+      e.preventDefault();
       triggerSwap();
     });
 
