@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Afterimage">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#070913">
   <title>⏳ 殘像 (Afterimage) - Demo</title>
   <style>
     :root {
@@ -273,7 +278,10 @@
       </div>
     </div>
     <div class="hud-right">
-      <div class="score-text">💀 <span id="kill-count">0</span></div>
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        <div class="score-text">💀 <span id="kill-count">0</span></div>
+        <button id="btn-fullscreen" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">⛶</button>
+      </div>
       <div class="timer-text" id="time-display">00:00</div>
       <a href="manual.html" class="doc-link">📖 玩法手冊</a>
     </div>
@@ -434,6 +442,23 @@
       }
       lastBrowserTouchTime = now;
     }, { passive: false });
+
+    document.getElementById('btn-fullscreen').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    });
 
     // 玩家配置 (半徑由 16px 縮減至 10px，視野擴大 2.5 倍)
     const player = {
