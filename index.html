@@ -280,7 +280,8 @@
     <div class="hud-right">
       <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
         <div class="score-text">💀 <span id="kill-count">0</span></div>
-        <button id="btn-fullscreen" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">⛶</button>
+        <button id="btn-reload" title="重新整理" style="background: none; border: none; font-size: 13px; color: #38bdf8; cursor: pointer; padding: 2px 4px;">🔄</button>
+        <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">⛶</button>
       </div>
       <div class="timer-text" id="time-display">00:00</div>
       <a href="manual.html" class="doc-link">📖 玩法手冊</a>
@@ -442,6 +443,11 @@
       }
       lastBrowserTouchTime = now;
     }, { passive: false });
+
+    document.getElementById('btn-reload').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      window.location.reload();
+    });
 
     document.getElementById('btn-fullscreen').addEventListener('pointerdown', (e) => {
       e.stopPropagation();
