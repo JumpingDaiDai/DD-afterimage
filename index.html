@@ -25,20 +25,23 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-tap-highlight-color: transparent !important;
       touch-action: none;
     }
     html, body {
-      width: 100%;
+      width: 100vw;
       height: 100dvh;
       overflow: hidden;
       background: var(--bg);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
       color: #fff;
       touch-action: none;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
     }
     #game-canvas {
       position: absolute;
@@ -489,8 +492,9 @@
         root.style.height = `${winW}px`;
         root.style.top = '0px';
         root.style.left = '0px';
-        // 順時針旋轉 90 度後，平移對齊至視窗正上方
-        root.style.transform = `rotate(90deg) translateY(-${winW}px)`;
+        root.style.transformOrigin = '0 0';
+        // 標準先向右平移 winW，再以 (0,0) 為軸順時針轉 90 度，剛好填滿直向視窗
+        root.style.transform = `translate(${winW}px, 0px) rotate(90deg)`;
         
         width = canvas.width = Math.floor(winH);
         height = canvas.height = Math.floor(winW);
@@ -502,6 +506,7 @@
         root.style.height = `${winH}px`;
         root.style.top = '0px';
         root.style.left = '0px';
+        root.style.transformOrigin = '0 0';
         root.style.transform = 'none';
 
         width = canvas.width = Math.floor(winW);
@@ -697,18 +702,15 @@
 
     // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡
     window.addEventListener('touchstart', e => {
-      // 若非互動按鈕/彈窗卡片，全面執行 preventDefault
-      const isInteractive = e.target && (
-        e.target.closest('button') || 
-        e.target.closest('a') || 
-        e.target.closest('#joystick-base') ||
-        e.target.closest('.upgrade-card') ||
-        e.target.closest('.btn-restart')
-      );
-      if (!isInteractive && e.cancelable) {
+      // 判斷是否為輸入表單等原生元件，其餘遊戲畫面全域 preventDefault 防止放大鏡與雙擊縮放
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        return;
+      }
+      if (e.cancelable) {
+        // 防止 Safari 長按放大鏡
         e.preventDefault();
       }
-    }, { passive: false });
+    }, { passive: false, capture: true });
 
     window.addEventListener('touchmove', e => {
       // 全螢幕遊戲完全禁止瀏覽器橡皮筋滾動
@@ -894,7 +896,12 @@
     // --- 首頁 Start 按鈕事件 ---
     const btnStart = document.getElementById('btn-start');
     const homeScreen = document.getElementById('home-screen');
+    let hasStarted = false;
+
     const startGame = (e) => {
+      if (hasStarted) return;
+      hasStarted = true;
+
       if (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -902,7 +909,12 @@
       AudioEngine.init();
       lockLandscape();
 
-      // 嘗試進入 Fullscreen 隱藏 Status Bar 與 Home Indicator
+      // 進入遊戲狀態
+      STATE.isStarted = true;
+      homeScreen.style.display = 'none';
+      homeScreen.classList.add('hidden');
+
+      // 嘗試進入 Fullscreen
       try {
         if (!document.fullscreenElement) {
           if (document.documentElement.requestFullscreen) {
@@ -914,11 +926,13 @@
       } catch (err) {}
 
       window.scrollTo(0, 0);
-      setTimeout(resize, 100);
-
-      STATE.isStarted = true;
-      homeScreen.classList.add('hidden');
+      resize();
+      setTimeout(resize, 60);
+      setTimeout(resize, 200);
     };
+
+    // 綁定全事件（touchstart, pointerdown, click）確保所有裝置即點即開
+    btnStart.addEventListener('touchstart', startGame, { passive: false });
     btnStart.addEventListener('pointerdown', startGame);
     btnStart.addEventListener('click', startGame);
 
