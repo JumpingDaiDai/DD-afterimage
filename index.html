@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Afterimage">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
+  <link rel="manifest" href="manifest.json">
   <title>殘像 (Afterimage) v0.0.6</title>
   <style>
     :root {
@@ -900,6 +901,21 @@
       }
       AudioEngine.init();
       lockLandscape();
+
+      // 嘗試進入 Fullscreen 隱藏 Status Bar 與 Home Indicator
+      try {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+          }
+        }
+      } catch (err) {}
+
+      window.scrollTo(0, 0);
+      setTimeout(resize, 100);
+
       STATE.isStarted = true;
       homeScreen.classList.add('hidden');
     };
