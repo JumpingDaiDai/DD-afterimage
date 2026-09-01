@@ -249,17 +249,91 @@
       padding: 20px;
     }
     .gameover-modal.active { display: flex; }
-    .btn-restart {
-      margin-top: 18px;
-      background: var(--primary);
-      color: #0b0f19;
-      font-size: 15px;
-      font-weight: 800;
-      padding: 10px 28px;
-      border-radius: 8px;
+    /* 首頁 (Title / Home Screen) */
+    .home-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.88), rgba(7, 9, 19, 0.96));
+      backdrop-filter: blur(14px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      text-align: center;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .home-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .game-logo {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #38bdf8, #ec4899, #facc15);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.4));
+    }
+    .game-subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .version-tag {
+      font-size: 11px;
+      font-family: monospace;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 999px;
+      padding: 3px 10px;
+      margin-bottom: 28px;
+      display: inline-block;
+    }
+    .btn-start {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #070913;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 14px 44px;
+      border-radius: 999px;
       border: none;
       cursor: pointer;
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      touch-action: manipulation;
     }
+    .btn-start:active {
+      transform: scale(0.94);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+    .home-features {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+    }
+    .home-link-btn {
+      font-size: 12px;
+      color: #cbd5e1;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
   </style>
 </head>
 <body>
@@ -304,6 +378,18 @@
     </div>
   </div>
 
+  <!-- 遊戲首頁 (Title Screen) -->
+  <div id="home-screen" class="home-screen">
+    <div class="game-logo">⏳ 殘像</div>
+    <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
+    <div class="version-tag">Version 0.0.1</div>
+    <button id="btn-start" class="btn-start">START GAME</button>
+    <div class="home-features">
+      <a href="manual.html" class="home-link-btn">📖 玩法手冊</a>
+      <a href="../index.html" class="home-link-btn">🏠 遊戲大廳</a>
+    </div>
+  </div>
+
   <!-- 升級彈窗 -->
   <div id="upgrade-modal" class="upgrade-modal">
     <div class="upgrade-title">⚡ 選擇時空突破天賦</div>
@@ -333,6 +419,7 @@
 
     // 遊戲狀態
     const STATE = {
+      isStarted: false,
       isPaused: false,
       isGameOver: false,
       gameTime: 0,
@@ -613,6 +700,21 @@
       triggerSwap();
     });
 
+    // --- 首頁 Start 按鈕事件 ---
+    const btnStart = document.getElementById('btn-start');
+    const homeScreen = document.getElementById('home-screen');
+    const startGame = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      AudioEngine.init();
+      STATE.isStarted = true;
+      homeScreen.classList.add('hidden');
+    };
+    btnStart.addEventListener('pointerdown', startGame);
+    btnStart.addEventListener('click', startGame);
+
     // 觸發回溯
     function triggerEcho() {
       if (player.echoCd > 0 || player.history.length < 20) return;
@@ -728,7 +830,7 @@
     // --- 遊戲主循環 ---
     let frameCount = 0;
     function update() {
-      if (STATE.isPaused || STATE.isGameOver) return;
+      if (!STATE.isStarted || STATE.isPaused || STATE.isGameOver) return;
       frameCount++;
       STATE.gameTime++;
 
