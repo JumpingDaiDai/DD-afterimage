@@ -434,8 +434,14 @@
 
     // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡
     window.addEventListener('touchstart', e => {
-      // 若非互動按鈕，全面執行 preventDefault
-      const isInteractive = e.target && (e.target.closest('button') || e.target.closest('a') || e.target.closest('#joystick-base'));
+      // 若非互動按鈕/彈窗卡片，全面執行 preventDefault
+      const isInteractive = e.target && (
+        e.target.closest('button') || 
+        e.target.closest('a') || 
+        e.target.closest('#joystick-base') ||
+        e.target.closest('.upgrade-card') ||
+        e.target.closest('.btn-restart')
+      );
       if (!isInteractive && e.cancelable) {
         e.preventDefault();
       }
@@ -703,11 +709,17 @@
             <p>${item.desc}</p>
           </div>
         `;
-        card.onclick = () => {
+        const selectCard = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          AudioEngine.init();
           item.apply();
           modal.classList.remove('active');
           STATE.isPaused = false;
         };
+        card.addEventListener('pointerdown', selectCard);
         list.appendChild(card);
       });
       modal.classList.add('active');
