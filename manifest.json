@@ -1,0 +1,9 @@
+{
+  "name": "殘像 (Afterimage)",
+  "short_name": "Afterimage",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#070913",
+  "theme_color": "#070913"
+}
