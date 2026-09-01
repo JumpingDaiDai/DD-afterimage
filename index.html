@@ -1286,10 +1286,87 @@
           target = echoes[0];
         }
 
-        const angle = Math.atan2(target.y - e.y, target.x - e.x);
-        e.facingAngle = angle; // 面向朝向追擊目標
-        e.x += Math.cos(angle) * e.speed;
-        e.y += Math.sin(angle) * e.speed;
+        if (e.isBoss) {
+          // Boss 專屬狀態機 (追擊 -> 蓄力預警 -> 超速直線衝鋒 -> 短暫硬直)
+          e.stateTimer--;
+
+          if (e.state === 'chase') {
+            const targetAng = Math.atan2(target.y - e.y, target.x - e.x);
+            // 平滑轉向（加入角速度限制，防止瞬間調頭護盾始終擋住玩家）
+            let angleDiff = normalizeAngle(targetAng - e.facingAngle);
+            e.facingAngle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), e.turnRate);
+
+            e.x += Math.cos(e.facingAngle) * e.speed;
+            e.y += Math.sin(e.facingAngle) * e.speed;
+
+            if (e.stateTimer <= 0) {
+              // 進入蓄力狀態
+              e.state = 'windup';
+              e.stateTimer = 45; // 蓄力 0.75 秒
+              e.dashAngle = Math.atan2(player.y - e.y, player.x - e.x);
+              e.facingAngle = e.dashAngle;
+              popups.push({ x: e.x, y: e.y - 30, text: 'CHARGE LOCK', life: 30, color: '#facc15' });
+            }
+          } else if (e.state === 'windup') {
+            // 蓄力微震與聚能粒子
+            if (frameCount % 3 === 0) {
+              particles.push({
+                x: e.x + (Math.random() - 0.5) * 30,
+                y: e.y + (Math.random() - 0.5) * 30,
+                vx: -Math.cos(e.dashAngle) * 3,
+                vy: -Math.sin(e.dashAngle) * 3,
+                life: 12,
+                color: '#facc15',
+                size: 2.5
+              });
+            }
+            if (e.stateTimer <= 0) {
+              // 發動超速大直線衝撞
+              e.state = 'dash';
+              e.stateTimer = 40; // 衝刺 40 幀 (移動超過 220px，必定衝過玩家身後！)
+              STATE.shake = 10;
+              AudioEngine.playOrbLaunch();
+            }
+          } else if (e.state === 'dash') {
+            // 直線高速衝刺，不追蹤
+            e.x += Math.cos(e.dashAngle) * e.dashSpeed;
+            e.y += Math.sin(e.dashAngle) * e.dashSpeed;
+
+            // 衝刺尾跡火花
+            particles.push({
+              x: e.x - Math.cos(e.dashAngle) * e.radius,
+              y: e.y - Math.sin(e.dashAngle) * e.radius,
+              vx: (Math.random() - 0.5) * 2,
+              vy: (Math.random() - 0.5) * 2,
+              life: 16,
+              color: '#f43f5e',
+              size: 3
+            });
+
+            if (e.stateTimer <= 0) {
+              e.state = 'cooldown';
+              e.stateTimer = 60; // 衝完後短暫冷卻 1 秒，給玩家充足時間背刺！
+            }
+          } else if (e.state === 'cooldown') {
+            // 冷卻減速緩行
+            e.x += Math.cos(e.dashAngle) * 0.4;
+            e.y += Math.sin(e.dashAngle) * 0.4;
+            if (e.stateTimer <= 0) {
+              e.state = 'chase';
+              e.stateTimer = 180; // 3 秒後準備下一輪衝刺
+            }
+          }
+
+          // 邊界防出界
+          e.x = Math.max(e.radius, Math.min(width - e.radius, e.x));
+          e.y = Math.max(e.radius, Math.min(height - e.radius, e.y));
+        } else {
+          // 普通怪物追擊
+          const angle = Math.atan2(target.y - e.y, target.x - e.x);
+          e.facingAngle = angle;
+          e.x += Math.cos(angle) * e.speed;
+          e.y += Math.sin(angle) * e.speed;
+        }
 
         if (Math.hypot(e.x - player.x, e.y - player.y) < e.radius + player.radius) {
           if (player.invulnerable <= 0) {
@@ -1434,14 +1511,20 @@
         x: width / 2,
         y: -50,
         radius: 22, // 巨大體積
-        speed: 0.65, // 沉穩移動
+        speed: 1.6, // 提高基礎巡航移速 (原 0.65 -> 1.6)
+        baseSpeed: 1.6,
         hp: 350 + Math.floor(STATE.gameTime / 600) * 100,
         maxHp: 350 + Math.floor(STATE.gameTime / 600) * 100,
         flash: 0,
         isBoss: true,
         hasShield: true,
         facingAngle: Math.PI / 2,
-        shieldPulse: 0
+        // Boss 衝刺與轉向狀態機
+        state: 'chase', // chase, windup, dash, cooldown
+        stateTimer: 180, // 3秒後發動第一次大衝刺
+        dashAngle: 0,
+        dashSpeed: 5.5,
+        turnRate: 0.04 // 轉向慣性，讓 Boss 轉頭不會瞬間完成
       });
     }
 
