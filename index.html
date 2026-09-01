@@ -476,8 +476,9 @@
     let isPortraitMode = false;
 
     function resize() {
-      const winW = window.innerWidth;
-      const winH = window.innerHeight;
+      // 優先採用 visualViewport 或 documentElement 確保精確取得渲染寬高
+      const winW = window.visualViewport ? window.visualViewport.width : (window.innerWidth || document.documentElement.clientWidth);
+      const winH = window.visualViewport ? window.visualViewport.height : (window.innerHeight || document.documentElement.clientHeight);
 
       // 若手機直拿 (winW < winH)，將根容器旋轉 90 度適配成橫向畫面
       if (winW < winH) {
@@ -487,30 +488,46 @@
         root.style.height = `${winW}px`;
         root.style.top = '0px';
         root.style.left = '0px';
-        // 繞 (0,0) 順時針旋轉 90 度後，需將 Y 軸平移負自身的寬度 (即 winW)
+        // 順時針旋轉 90 度後，平移對齊至視窗正上方
         root.style.transform = `rotate(90deg) translateY(-${winW}px)`;
         
-        width = canvas.width = winH;
-        height = canvas.height = winW;
+        width = canvas.width = Math.floor(winH);
+        height = canvas.height = Math.floor(winW);
       } else {
         // 手機正常橫拿 (winW >= winH)，0 度原生滿版
         isPortraitMode = false;
         root.classList.remove('is-rotated-portrait');
-        root.style.width = '100vw';
-        root.style.height = '100dvh';
+        root.style.width = `${winW}px`;
+        root.style.height = `${winH}px`;
         root.style.top = '0px';
         root.style.left = '0px';
         root.style.transform = 'none';
 
-        width = canvas.width = winW;
-        height = canvas.height = winH;
+        width = canvas.width = Math.floor(winW);
+        height = canvas.height = Math.floor(winH);
+      }
+
+      // 若玩家剛初始化或在原點，確保玩家始終位於畫布幾何正中央
+      if (typeof player !== 'undefined' && !STATE.isStarted) {
+        player.x = width / 2;
+        player.y = height / 2;
       }
     }
+
     window.addEventListener('resize', resize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', resize);
+    }
     window.addEventListener('orientationchange', () => {
-      setTimeout(resize, 100);
+      setTimeout(resize, 60);
+      setTimeout(resize, 300);
     });
+
+    // 首次載入三段式延遲校準 (解決 iOS Safari 剛開網頁時寬高未計算完畢的問題)
     resize();
+    setTimeout(resize, 50);
+    setTimeout(resize, 200);
+    window.addEventListener('load', resize);
 
     // 嘗試調用 Screen Orientation API 鎖定橫向 (若瀏覽器支援)
     function lockLandscape() {
