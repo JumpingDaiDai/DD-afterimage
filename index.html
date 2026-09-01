@@ -116,72 +116,99 @@
       font-weight: bold;
     }
 
-    /* 方案 A 控制區：左側固定搖桿 + 右側清晰雙技能鍵 */
+    /* 方案 A 控制區：經典手遊左搖桿 + 右側人體工學扇形雙技能鍵 */
     .controls-layer {
       position: absolute;
-      bottom: env(safe-area-inset-bottom, 20px);
-      left: 16px;
-      right: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      top: 0;
       z-index: 20;
       pointer-events: none;
     }
+    .joystick-container {
+      position: absolute;
+      bottom: max(env(safe-area-inset-bottom, 24px), 24px);
+      left: max(env(safe-area-inset-left, 36px), 36px);
+      pointer-events: auto;
+    }
     #joystick-base {
-      width: 100px;
-      height: 100px;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1.5px dashed rgba(56, 189, 248, 0.4);
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.45));
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
       position: relative;
       pointer-events: auto;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
     #joystick-stick {
-      width: 42px;
-      height: 42px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
-      background: radial-gradient(circle, var(--primary), #0284c7);
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+      background: radial-gradient(circle, #38bdf8, #0284c7);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
       position: absolute;
-      top: 29px;
-      left: 29px;
+      top: 32px;
+      left: 32px;
       pointer-events: none;
       transform: translate(0px, 0px);
       transition: transform 0.05s ease-out;
     }
+    /* 右側技能區：手遊經典右手大拇指自然弧線扇形配置 */
     .action-buttons {
-      display: flex;
-      gap: 14px;
-      pointer-events: auto;
+      position: absolute;
+      bottom: max(env(safe-area-inset-bottom, 24px), 24px);
+      right: max(env(safe-area-inset-right, 36px), 36px);
+      width: 140px;
+      height: 140px;
+      pointer-events: none;
     }
     .btn-action {
-      width: 62px;
-      height: 62px;
+      position: absolute;
       border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.8);
+      border: 2px solid rgba(255, 255, 255, 0.85);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
       transition: transform 0.1s, opacity 0.2s;
-      position: relative;
+      pointer-events: auto;
+      touch-action: manipulation;
     }
-    .btn-action:active { transform: scale(0.9); }
+    .btn-action:active { transform: scale(0.92); }
     .btn-action.disabled {
       filter: grayscale(0.9);
-      opacity: 0.4;
+      opacity: 0.35;
       pointer-events: none;
+    }
+    /* 主要技能：回溯 (大按鈕，位於拇指落點偏右下) */
+    .btn-echo {
+      width: 68px;
+      height: 68px;
+      bottom: 0px;
+      right: 4px;
+      background: radial-gradient(circle, #ec4899, #be185d);
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.7);
+    }
+    /* 次要技能：換位 (中按鈕，位於拇指上方自然伸展處) */
+    .btn-swap {
+      width: 56px;
+      height: 56px;
+      top: 4px;
+      left: 6px;
+      background: radial-gradient(circle, #facc15, #ca8a04);
+      box-shadow: 0 0 16px rgba(250, 204, 21, 0.65);
     }
     .btn-badge {
       position: absolute;
       top: -3px;
       right: -3px;
-      width: 19px;
-      height: 19px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       background: #38bdf8;
       color: #070913;
@@ -193,15 +220,7 @@
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
       border: 1.5px solid #070913;
     }
-    .btn-echo {
-      background: radial-gradient(circle, #ec4899, #be185d);
-      box-shadow: 0 0 16px rgba(236, 72, 153, 0.6);
-    }
-    .btn-swap {
-      background: radial-gradient(circle, #facc15, #ca8a04);
-      box-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
-    }
-    .btn-icon { font-size: 15px; font-weight: 900; }
+    .btn-icon { font-size: 14px; font-weight: 900; }
     .btn-lbl { font-size: 10px; font-weight: 800; color: #fff; margin-top: 1px; }
 
     /* 升級三選一彈窗 (z-index 提高至 200，pointer-events: auto) */
@@ -276,97 +295,223 @@
     .card-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
     .card-info p { font-size: 11px; color: #94a3b8; }
 
-    /* 遊戲結束彈窗 (z-index 提高至 210) */
+    /* 遊戲結束彈窗 (z-index 提高至 210，頂級毛玻璃 + 霓虹質感排版) */
     .gameover-modal {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(7, 9, 19, 0.9);
-      backdrop-filter: blur(12px);
+      background: radial-gradient(circle at center, rgba(30, 10, 20, 0.88), rgba(7, 9, 19, 0.98));
+      backdrop-filter: blur(16px);
       z-index: 210;
       display: none;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       text-align: center;
-      padding: 20px;
+      padding: 24px;
       pointer-events: auto;
     }
     .gameover-modal.active { display: flex; }
-    /* 首頁 (Title / Home Screen) */
+    .gameover-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      border-radius: 20px;
+      padding: 28px 40px;
+      box-shadow: 0 0 36px rgba(239, 68, 68, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 420px;
+      width: 90%;
+    }
+    .gameover-title {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, #ef4444, #f43f5e, #facc15);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.6));
+      margin-bottom: 20px;
+    }
+    .gameover-stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 28px;
+      width: 100%;
+      justify-content: center;
+    }
+    .stat-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .stat-val {
+      font-size: 22px;
+      font-weight: 900;
+      font-family: monospace;
+      color: #fff;
+    }
+    .stat-val.gold { color: var(--gold); text-shadow: 0 0 12px rgba(250, 204, 21, 0.5); }
+    .stat-val.cyan { color: var(--primary); text-shadow: 0 0 12px rgba(56, 189, 248, 0.5); }
+    .btn-restart {
+      background: linear-gradient(135deg, #ef4444, #be123c);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 14px 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      box-shadow: 0 0 24px rgba(239, 68, 68, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      touch-action: manipulation;
+      white-space: nowrap;
+    }
+    .btn-restart:active {
+      transform: scale(0.94);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    }
+    /* 首頁 (Title / Home Screen) #5 時空裂隙暗黑系 (Abyssal Void) 頂級沉浸排版 */
     .home-screen {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.88), rgba(7, 9, 19, 0.96));
-      backdrop-filter: blur(14px);
+      background: radial-gradient(circle at 50% 40%, #1e1136 0%, #0d061a 50%, #05020a 100%);
+      backdrop-filter: blur(20px);
       z-index: 100;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 24px;
       text-align: center;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
+      padding: 20px;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+      overflow: hidden;
+    }
+    /* 背景神秘時空裂隙光芒 */
+    .home-screen::before {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.22), rgba(236, 72, 153, 0.08), transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+      animation: voidPulse 6s ease-in-out infinite alternate;
+    }
+    @keyframes voidPulse {
+      0% { transform: scale(0.9) translate(-10px, -10px); opacity: 0.6; }
+      100% { transform: scale(1.15) translate(10px, 10px); opacity: 0.9; }
     }
     .home-screen.hidden {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
     }
-    .game-logo {
-      font-size: 38px;
+    /* 版本號右上角釘選 (融合 safe-area-inset) */
+    .version-tag-corner {
+      position: absolute;
+      top: max(env(safe-area-inset-top, 14px), 14px);
+      right: max(env(safe-area-inset-right, 18px), 18px);
+      font-size: 11px;
+      font-family: monospace;
+      color: #c084fc;
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 999px;
+      padding: 3px 12px;
+      letter-spacing: 0.8px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.15);
+    }
+    .home-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 38px;
+      position: relative;
+      z-index: 2;
+    }
+    /* 「殘像」時空裂隙暗黑 Logo 設計 */
+    .logo-container {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .game-logo-main {
+      font-size: 62px;
       font-weight: 900;
-      letter-spacing: 2px;
-      background: linear-gradient(135deg, #38bdf8, #ec4899, #facc15);
+      letter-spacing: 14px;
+      padding-left: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #e9d5ff 40%, #c084fc 80%, #7e22ce 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 6px;
-      filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.4));
+      filter: drop-shadow(0 0 28px rgba(192, 132, 252, 0.6));
+    }
+    .game-logo-en {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 10px;
+      padding-left: 10px;
+      color: #c084fc;
+      text-transform: uppercase;
+      opacity: 0.9;
+      margin-bottom: 8px;
+      text-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
     }
     .game-subtitle {
       font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 12px;
-      font-weight: 500;
+      color: #a855f7;
+      letter-spacing: 3px;
+      font-weight: 600;
+      opacity: 0.85;
+      text-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
     }
-    .version-tag {
-      font-size: 11px;
-      font-family: monospace;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      border-radius: 999px;
-      padding: 3px 10px;
-      margin-bottom: 28px;
-      display: inline-block;
+    .home-center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 2;
     }
+    /* 深空裂隙結晶按鈕 */
     .btn-start {
-      background: linear-gradient(135deg, #38bdf8, #0284c7);
-      color: #070913;
+      background: linear-gradient(135deg, #a855f7 0%, #7e22ce 50%, #4c1d95 100%);
+      color: #ffffff;
       font-size: 18px;
       font-weight: 900;
-      letter-spacing: 1px;
-      padding: 14px 44px;
+      letter-spacing: 3px;
+      padding: 16px 58px;
       border-radius: 999px;
-      border: none;
+      border: 1.5px solid rgba(233, 213, 255, 0.4);
       cursor: pointer;
-      box-shadow: 0 0 24px rgba(56, 189, 248, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+      box-shadow: 0 0 32px rgba(168, 85, 247, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.6);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       touch-action: manipulation;
+      white-space: nowrap;
     }
     .btn-start:active {
       transform: scale(0.94);
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-    }
-    .home-features {
-      margin-top: 24px;
-      display: flex;
-      gap: 12px;
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
     }
     .home-link-btn {
       font-size: 12px;
@@ -383,7 +528,7 @@
 
     .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
 
-    /* 全局遊戲根容器 (支援直向時強制 90 度橫置) */
+    /* 全局遊戲根容器 (100% 原生全螢幕滿版) */
     #game-root {
       position: absolute;
       top: 0;
@@ -391,15 +536,65 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      transform-origin: top left;
     }
-    #game-root.is-rotated-portrait {
+
+    /* 橫向引導提示遮罩 (直向時跳出旋轉提示) */
+    .landscape-prompt {
       position: fixed;
-      transform-origin: 0 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      background: radial-gradient(circle at center, #0f172a, #070913);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .landscape-prompt.active {
+      display: flex;
+    }
+    .prompt-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 20px;
+      animation: rotatePhone 2s ease-in-out infinite alternate;
+    }
+    @keyframes rotatePhone {
+      0% { transform: rotate(0deg); }
+      30% { transform: rotate(0deg); }
+      70% { transform: rotate(-90deg); }
+      100% { transform: rotate(-90deg); }
+    }
+    .prompt-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .prompt-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      max-width: 260px;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
+  <!-- 直向旋轉引導遮罩 -->
+  <div id="landscape-prompt" class="landscape-prompt">
+    <svg class="prompt-icon" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+      <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="3" />
+    </svg>
+    <div class="prompt-title">請將手機旋轉至橫向</div>
+    <div class="prompt-desc">殘像需要雙手橫向操作以獲得最佳戰鬥視野與極致流暢度</div>
+  </div>
+
   <div id="game-root">
     <canvas id="game-canvas"></canvas>
 
@@ -421,37 +616,43 @@
           <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
         </div>
         <div class="timer-text" id="time-display">00:00</div>
-        <a href="manual.html" class="doc-link">玩法手冊</a>
       </div>
     </div>
 
-    <!-- 方案 A 控制層：左搖桿 + 右側清晰雙鍵 -->
+    <!-- 方案 A 控制層：左搖桿 + 右側人體工學扇形雙鍵 -->
     <div class="controls-layer">
-      <div id="joystick-base">
-        <div id="joystick-stick"></div>
+      <div class="joystick-container">
+        <div id="joystick-base">
+          <div id="joystick-stick"></div>
+        </div>
       </div>
       <div class="action-buttons">
+        <button id="btn-swap" class="btn-action btn-swap disabled">
+          <span class="btn-icon">SWAP</span>
+          <span class="btn-lbl">換位</span>
+        </button>
         <button id="btn-echo" class="btn-action btn-echo">
           <span id="echo-badge" class="btn-badge">2</span>
           <span class="btn-icon">REWIND</span>
           <span class="btn-lbl" id="echo-lbl">回溯</span>
-        </button>
-        <button id="btn-swap" class="btn-action btn-swap disabled">
-          <span class="btn-icon">SWAP</span>
-          <span class="btn-lbl">換位</span>
         </button>
       </div>
     </div>
 
     <!-- 遊戲首頁 (Title Screen) -->
     <div id="home-screen" class="home-screen">
-      <div class="game-logo">殘像</div>
-      <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
-      <div class="version-tag">Version 0.0.8</div>
-      <button id="btn-start" class="btn-start">START GAME</button>
-      <div class="home-features">
-        <a href="manual.html" class="home-link-btn">玩法手冊</a>
-        <button onclick="window.location.href=window.location.pathname+'?t='+Date.now()" class="home-link-btn" style="cursor: pointer;">強制重整</button>
+      <!-- 右上角極簡版本號標籤 -->
+      <div class="version-tag-corner">v0.0.9</div>
+
+      <div class="home-header">
+        <div class="logo-container">
+          <h1 class="game-logo-main">殘像</h1>
+        </div>
+        <div class="game-logo-en">AFTERIMAGE</div>
+        <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
+      </div>
+      <div class="home-center">
+        <button id="btn-start" class="btn-start">START GAME</button>
       </div>
     </div>
 
@@ -461,86 +662,32 @@
       <div id="card-list" class="card-list"></div>
     </div>
 
-    <!-- 結算彈窗 -->
+    <!-- 結算彈窗 (時空線崩塌) -->
     <div id="gameover-modal" class="gameover-modal">
-      <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">時空線崩塌</h2>
-      <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
-      <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
-      <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
+      <div class="gameover-box">
+        <h2 class="gameover-title">時空線崩塌</h2>
+        <div class="gameover-stats">
+          <div class="stat-card">
+            <span class="stat-label">存活時間</span>
+            <span id="final-time" class="stat-val cyan">00:00</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">消滅異變體</span>
+            <span id="final-kills" class="stat-val gold">0</span>
+          </div>
+        </div>
+        <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
+      </div>
     </div>
   </div>
 
   <script>
+    function dbgLog(msg) {}
+
     // --- 遊戲核心引擎 ---
     const root = document.getElementById('game-root');
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
-
-    let width = 0, height = 0;
-    let isPortraitMode = false;
-
-    function resize() {
-      // 優先採用 visualViewport 或 documentElement 確保精確取得渲染寬高
-      const winW = window.visualViewport ? window.visualViewport.width : (window.innerWidth || document.documentElement.clientWidth);
-      const winH = window.visualViewport ? window.visualViewport.height : (window.innerHeight || document.documentElement.clientHeight);
-
-      // 若手機直拿 (winW < winH)，將根容器旋轉 90 度適配成橫向畫面
-      if (winW < winH) {
-        isPortraitMode = true;
-        root.classList.add('is-rotated-portrait');
-        root.style.width = `${winH}px`;
-        root.style.height = `${winW}px`;
-        root.style.top = '0px';
-        root.style.left = '0px';
-        root.style.transformOrigin = '0 0';
-        // 標準先向右平移 winW，再以 (0,0) 為軸順時針轉 90 度，剛好填滿直向視窗
-        root.style.transform = `translate(${winW}px, 0px) rotate(90deg)`;
-        
-        width = canvas.width = Math.floor(winH);
-        height = canvas.height = Math.floor(winW);
-      } else {
-        // 手機正常橫拿 (winW >= winH)，0 度原生滿版
-        isPortraitMode = false;
-        root.classList.remove('is-rotated-portrait');
-        root.style.width = `${winW}px`;
-        root.style.height = `${winH}px`;
-        root.style.top = '0px';
-        root.style.left = '0px';
-        root.style.transformOrigin = '0 0';
-        root.style.transform = 'none';
-
-        width = canvas.width = Math.floor(winW);
-        height = canvas.height = Math.floor(winH);
-      }
-
-      // 若玩家剛初始化或在原點，確保玩家始終位於畫布幾何正中央
-      if (typeof player !== 'undefined' && !STATE.isStarted) {
-        player.x = width / 2;
-        player.y = height / 2;
-      }
-    }
-
-    window.addEventListener('resize', resize);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', resize);
-    }
-    window.addEventListener('orientationchange', () => {
-      setTimeout(resize, 60);
-      setTimeout(resize, 300);
-    });
-
-    // 首次載入三段式延遲校準 (解決 iOS Safari 剛開網頁時寬高未計算完畢的問題)
-    resize();
-    setTimeout(resize, 50);
-    setTimeout(resize, 200);
-    window.addEventListener('load', resize);
-
-    // 嘗試調用 Screen Orientation API 鎖定橫向 (若瀏覽器支援)
-    function lockLandscape() {
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {});
-      }
-    }
 
     // 遊戲狀態
     const STATE = {
@@ -554,6 +701,89 @@
       maxExp: 8,
       shake: 0
     };
+
+    let width = 0, height = 0;
+    let isPortraitMode = false;
+    let player = null;
+
+    const promptModal = document.getElementById('landscape-prompt');
+
+    function resize() {
+      // 優先採用 visualViewport 或 documentElement 確保精確取得渲染寬高
+      const vvW = window.visualViewport ? window.visualViewport.width : null;
+      const vvH = window.visualViewport ? window.visualViewport.height : null;
+      const iw = window.innerWidth;
+      const ih = window.innerHeight;
+      const cw = document.documentElement.clientWidth;
+      const ch = document.documentElement.clientHeight;
+
+      const winW = Math.floor(vvW || cw || iw);
+      const winH = Math.floor(vvH || ch || ih);
+
+      dbgLog(`📐 Resize: win=${winW}x${winH}, vv=${vvW}x${vvH}, inner=${iw}x${ih}`);
+
+      // 手機直拿 (winW < winH) ➔ 顯示「請旋轉至橫向」引導遮罩
+      if (winW < winH) {
+        isPortraitMode = true;
+        promptModal.classList.add('active');
+        dbgLog(`📱 Mode: 直向模式 ➔ 顯示旋轉手機引導`);
+      } else {
+        // 手機橫拿 (winW >= winH) ➔ 隱藏引導，100% 原生全螢幕滿版
+        isPortraitMode = false;
+        promptModal.classList.remove('active');
+
+        width = canvas.width = winW;
+        height = canvas.height = winH;
+
+        root.style.width = '100%';
+        root.style.height = '100%';
+        root.style.transform = 'none';
+
+        dbgLog(`🎮 Mode: 原生橫向滿版, canvas=${width}x${height}`);
+      }
+
+      // 若玩家已初始化完成且尚未開始遊戲，保持置中
+      if (player && !STATE.isStarted) {
+        player.x = width / 2;
+        player.y = height / 2;
+      }
+    }
+
+    window.addEventListener('resize', resize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', resize);
+      window.visualViewport.addEventListener('scroll', resize);
+    }
+    window.addEventListener('orientationchange', () => {
+      setTimeout(resize, 50);
+      setTimeout(resize, 150);
+      setTimeout(resize, 350);
+    });
+
+    // 首次載入多階段自適應校準（rAF + 多次延遲 + 頁面可見性觸發，徹底消除初次未旋轉前的幾何位移）
+    resize();
+    requestAnimationFrame(resize);
+    requestAnimationFrame(() => requestAnimationFrame(resize));
+    setTimeout(resize, 60);
+    setTimeout(resize, 200);
+    setTimeout(resize, 500);
+    window.addEventListener('load', () => {
+      resize();
+      setTimeout(resize, 100);
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(resize);
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') resize();
+    });
+
+    // 嘗試調用 Screen Orientation API 鎖定橫向 (若瀏覽器支援)
+    function lockLandscape() {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }
 
     // 音效合成系統 (Web Audio)
     const AudioEngine = {
@@ -700,14 +930,19 @@
       window.addEventListener(evt, e => e.preventDefault(), { passive: false, capture: true });
     });
 
-    // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡
+    // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡 (排除所有按鈕與互動元件)
     window.addEventListener('touchstart', e => {
-      // 判斷是否為輸入表單等原生元件，其餘遊戲畫面全域 preventDefault 防止放大鏡與雙擊縮放
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-        return;
-      }
-      if (e.cancelable) {
-        // 防止 Safari 長按放大鏡
+      const isInteractive = e.target && (
+        e.target.closest('button') || 
+        e.target.closest('a') || 
+        e.target.closest('#joystick-base') ||
+        e.target.closest('.upgrade-card') ||
+        e.target.closest('.btn-restart') ||
+        e.target.tagName === 'INPUT' || 
+        e.target.tagName === 'TEXTAREA'
+      );
+      if (!isInteractive && e.cancelable) {
+        // 僅在非互動區域防止 Safari 長按放大鏡與手勢
         e.preventDefault();
       }
     }, { passive: false, capture: true });
@@ -735,7 +970,7 @@
     });
 
     // 玩家配置 (半徑由 16px 縮減至 10px，視野擴大 2.5 倍)
-    const player = {
+    player = {
       x: width / 2,
       y: height / 2,
       radius: 10,
@@ -844,16 +1079,8 @@
     });
 
     function handleJoyDrag(pos) {
-      let rawDx = pos.clientX - joyOrigin.x;
-      let rawDy = pos.clientY - joyOrigin.y;
-
-      // 若處於直向旋轉 90 度模式，需將螢幕座標系反轉 90 度映射到遊戲座標系
-      let dx = rawDx;
-      let dy = rawDy;
-      if (isPortraitMode) {
-        dx = rawDy;
-        dy = -rawDx;
-      }
+      const dx = pos.clientX - joyOrigin.x;
+      const dy = pos.clientY - joyOrigin.y;
 
       const dist = Math.hypot(dx, dy);
       const maxR = 32;
@@ -955,13 +1182,15 @@
         echoes.shift();
       }
 
-      // 殘像存活延長至 8 秒 (480 幀)，軌跡自動循環重播
+      // 殘像機制：播放完整過去 3 秒軌跡 1 次，走到終點後停在原地 3 秒才消失
       echoes.push({
         frames: recordedActions,
         currentFrame: 0,
         x: player.x,
         y: player.y,
-        lifeTimer: 480 // 8 秒超長駐留
+        isFinished: false,
+        standTimer: 180, // 走完後原地駐留 3 秒 (180 幀)
+        shootCd: 0
       });
 
       player.x = oldState.x;
@@ -1106,6 +1335,7 @@
       list.innerHTML = '';
 
       const shuffled = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
+      let hasSelected = false;
       shuffled.forEach(item => {
         const card = document.createElement('div');
         card.className = 'upgrade-card';
@@ -1117,6 +1347,9 @@
           </div>
         `;
         const selectCard = (e) => {
+          if (hasSelected) return;
+          hasSelected = true;
+
           if (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -1127,8 +1360,6 @@
           STATE.isPaused = false;
         };
         card.addEventListener('pointerdown', selectCard);
-        card.addEventListener('touchstart', selectCard, { passive: false });
-        card.addEventListener('click', selectCard);
         list.appendChild(card);
       });
       modal.classList.add('active');
@@ -1140,6 +1371,11 @@
       if (!STATE.isStarted || STATE.isPaused || STATE.isGameOver) return;
       frameCount++;
       STATE.gameTime++;
+
+      // 無敵受傷幀遞減
+      if (player.invulnerable > 0) {
+        player.invulnerable--;
+      }
 
       // 1. 移動計算 (放手時即原地停下)
       let moveX = 0, moveY = 0;
@@ -1202,18 +1438,44 @@
         }
       }
 
-      // 3. 殘像更新 (循環重播軌跡，持續存活 8 秒)
+      // 3. 殘像更新 (回放 1 次 ➔ 原地停留 3 秒持續攻擊 ➔ 粒子消散)
       for (let i = echoes.length - 1; i >= 0; i--) {
         const ec = echoes[i];
-        ec.lifeTimer--;
+        ec.shootCd--;
 
-        if (ec.frames.length > 0) {
-          const record = ec.frames[ec.currentFrame % ec.frames.length];
-          ec.x = record.x;
-          ec.y = record.y;
-          ec.currentFrame++;
+        if (!ec.isFinished) {
+          // 階段一：正在回放歷史軌跡 (只播 1 次)
+          if (ec.currentFrame < ec.frames.length) {
+            const record = ec.frames[ec.currentFrame];
+            ec.x = record.x;
+            ec.y = record.y;
+            ec.currentFrame++;
 
-          if (record.shooting && enemies.length > 0) {
+            // 殘像具備獨立攻擊節奏：每 18 幀自動向最近敵人開火
+            if (ec.shootCd <= 0 && enemies.length > 0) {
+              let nearest = null, minDist = Infinity;
+              for (const e of enemies) {
+                const d = Math.hypot(e.x - ec.x, e.y - ec.y);
+                if (d < minDist) { minDist = d; nearest = e; }
+              }
+              if (nearest) {
+                const ang = Math.atan2(nearest.y - ec.y, nearest.x - ec.x);
+                bullets.push({
+                  x: ec.x, y: ec.y,
+                  vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
+                  damage: 14, life: 50, isEcho: true
+                });
+                ec.shootCd = 18; // 殘像獨立攻擊間隔
+              }
+            }
+          } else {
+            // 軌跡播放完畢，進入原地停留 3 秒階段
+            ec.isFinished = true;
+          }
+        } else {
+          // 階段二：留在結束點原地駐留 3 秒 (180 幀)，持續向最近敵人鎖定射擊
+          ec.standTimer--;
+          if (ec.shootCd <= 0 && enemies.length > 0) {
             let nearest = null, minDist = Infinity;
             for (const e of enemies) {
               const d = Math.hypot(e.x - ec.x, e.y - ec.y);
@@ -1226,24 +1488,25 @@
                 vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
                 damage: 14, life: 50, isEcho: true
               });
+              ec.shootCd = 18; // 原地砲台射速
             }
           }
-        }
 
-        if (ec.lifeTimer <= 0) {
-          for (let p = 0; p < 12; p++) {
-            const ang = Math.random() * Math.PI * 2;
-            particles.push({
-              x: ec.x, y: ec.y,
-              vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
-              life: 20, color: '#a855f7', size: 2
-            });
+          if (ec.standTimer <= 0) {
+            for (let p = 0; p < 14; p++) {
+              const ang = Math.random() * Math.PI * 2;
+              particles.push({
+                x: ec.x, y: ec.y,
+                vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
+                life: 20, color: '#a855f7', size: 2
+              });
+            }
+            echoes.splice(i, 1);
           }
-          echoes.splice(i, 1);
         }
       }
 
-      // 殘像雷射割裂與結界判定 (縮小碰撞容錯)
+      // 殘像雷射割裂與結界判定 (透過 Convex Hull 自動構建向外凸起的包絡多邊形，絕不凹陷或自交)
       if (echoes.length === 1) {
         const ec = echoes[0];
         for (const enemy of enemies) {
@@ -1253,9 +1516,26 @@
           }
         }
       } else if (echoes.length >= 2) {
-        const poly = [{ x: player.x, y: player.y }, ...echoes.map(e => ({ x: e.x, y: e.y }))];
+        const allPoints = [{ x: player.x, y: player.y }, ...echoes.map(e => ({ x: e.x, y: e.y }))];
+        const hull = getConvexHull(allPoints);
+
         for (const enemy of enemies) {
-          if (isPointInPolygon({ x: enemy.x, y: enemy.y }, poly)) {
+          // 判定一：怪物位於凸包多邊形內部
+          let isHit = isPointInPolygon({ x: enemy.x, y: enemy.y }, hull);
+
+          // 判定二：怪物碰觸到凸包雷射連線邊界
+          if (!isHit) {
+            for (let j = 0; j < hull.length; j++) {
+              const p1 = hull[j];
+              const p2 = hull[(j + 1) % hull.length];
+              if (pointToSegmentDist(enemy.x, enemy.y, p1.x, p1.y, p2.x, p2.y) < enemy.radius + 4) {
+                isHit = true;
+                break;
+              }
+            }
+          }
+
+          if (isHit) {
             enemy.hp -= player.resonanceDmg * 1.5;
             enemy.flash = 2;
             if (Math.random() < 0.2) {
@@ -1526,10 +1806,23 @@
 
         if (Math.hypot(e.x - player.x, e.y - player.y) < e.radius + player.radius) {
           if (player.invulnerable <= 0) {
-            player.hp -= e.isBoss ? 28 : 12;
-            player.invulnerable = 30;
+            const dmg = e.isBoss ? 28 : 12;
+            player.hp -= dmg;
+            player.invulnerable = 30; // 0.5 秒無敵受擊保護
             STATE.shake = e.isBoss ? 12 : 6;
             AudioEngine.playHit();
+            popups.push({ x: player.x, y: player.y - 14, text: dmg, life: 25, color: '#ef4444' });
+
+            // 玩家受傷紅色粒子
+            for (let p = 0; p < 6; p++) {
+              const ang = Math.random() * Math.PI * 2;
+              particles.push({
+                x: player.x, y: player.y,
+                vx: Math.cos(ang) * 2.5, vy: Math.sin(ang) * 2.5,
+                life: 14, color: '#ef4444', size: 2.5
+              });
+            }
+
             if (player.hp <= 0) {
               player.hp = 0;
               gameOver();
@@ -1651,6 +1944,38 @@
       return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
     }
 
+    // 凸包算法 (Andrew's Monotone Chain Convex Hull Algorithm)
+    // 確保多個殘像與本體之間的連線永遠是向外凸起的結界，絕不凹陷或自交交叉
+    function getConvexHull(points) {
+      if (points.length <= 2) return points;
+      const sorted = [...points].sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+
+      const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+      // 下凸包
+      const lower = [];
+      for (const p of sorted) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+          lower.pop();
+        }
+        lower.push(p);
+      }
+
+      // 上凸包
+      const upper = [];
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        const p = sorted[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+          upper.pop();
+        }
+        upper.push(p);
+      }
+
+      lower.pop();
+      upper.pop();
+      return lower.concat(upper);
+    }
+
     function isPointInPolygon(point, vs) {
       let x = point.x, y = point.y;
       let inside = false;
@@ -1747,23 +2072,35 @@
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
       }
 
-      // 1. 殘像結界與連線
+      // 1. 殘像結界與連線 (全面套用 Convex Hull 凸包幾何，永遠向外凸起，絕不凹陷或自交)
       if (echoes.length >= 2) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(236, 72, 153, 0.12)';
-        ctx.strokeStyle = '#ec4899';
-        ctx.lineWidth = 1.8;
-        ctx.shadowColor = '#ec4899';
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.moveTo(player.x, player.y);
-        for (const ec of echoes) {
-          ctx.lineTo(ec.x, ec.y);
+        const allPoints = [{ x: player.x, y: player.y }, ...echoes.map(e => ({ x: e.x, y: e.y }))];
+        const hull = getConvexHull(allPoints);
+
+        if (hull.length >= 3) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(236, 72, 153, 0.14)';
+          ctx.strokeStyle = '#ec4899';
+          ctx.lineWidth = 2;
+          ctx.shadowColor = '#ec4899';
+          ctx.shadowBlur = 14;
+          ctx.beginPath();
+          ctx.moveTo(hull[0].x, hull[0].y);
+          for (let h = 1; h < hull.length; h++) {
+            ctx.lineTo(hull[h].x, hull[h].y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 結界內部流光光芒
+          ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([6, 6]);
+          ctx.stroke();
+
+          ctx.restore();
         }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
       } else if (echoes.length === 1) {
         ctx.save();
         ctx.strokeStyle = '#ec4899';
