@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Afterimage">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
-  <title>殘像 (Afterimage) v0.0.4</title>
+  <title>殘像 (Afterimage) v0.0.5</title>
   <style>
     :root {
       --bg: #070913;
@@ -164,12 +164,30 @@
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
       transition: transform 0.1s, opacity 0.2s;
+      position: relative;
     }
     .btn-action:active { transform: scale(0.9); }
     .btn-action.disabled {
       filter: grayscale(0.9);
       opacity: 0.4;
       pointer-events: none;
+    }
+    .btn-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #38bdf8;
+      color: #070913;
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+      border: 1.5px solid #070913;
     }
     .btn-echo {
       background: radial-gradient(circle, #ec4899, #be185d);
@@ -358,88 +376,143 @@
       transition: background 0.2s;
     }
     .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
+
+    .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
+
+    /* 全局遊戲根容器 (支援直向時強制 90 度橫置) */
+    #game-root {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      transform-origin: top left;
+    }
+    #game-root.is-rotated-portrait {
+      position: fixed;
+      transform-origin: 0 0;
+    }
   </style>
 </head>
 <body>
-  <canvas id="game-canvas"></canvas>
+  <div id="game-root">
+    <canvas id="game-canvas"></canvas>
 
-  <!-- 頂部 HUD -->
-  <div class="hud">
-    <div class="hud-left">
-      <div class="bar-container">
-        <span class="bar-label">HP</span>
-        <div class="bar-track"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+    <!-- 頂部 HUD -->
+    <div class="hud">
+      <div class="hud-left">
+        <div class="bar-container">
+          <span class="bar-label">HP</span>
+          <div class="bar-track"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+        </div>
+        <div class="bar-container">
+          <span class="bar-label">LV.<span id="level-num">1</span></span>
+          <div class="bar-track"><div id="exp-bar" class="bar-fill exp-fill" style="width: 0%;"></div></div>
+        </div>
       </div>
-      <div class="bar-container">
-        <span class="bar-label">LV.<span id="level-num">1</span></span>
-        <div class="bar-track"><div id="exp-bar" class="bar-fill exp-fill" style="width: 0%;"></div></div>
+      <div class="hud-right">
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+          <div class="score-text">KILLS <span id="kill-count">0</span></div>
+          <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
+        </div>
+        <div class="timer-text" id="time-display">00:00</div>
+        <a href="manual.html" class="doc-link">玩法手冊</a>
       </div>
     </div>
-    <div class="hud-right">
-      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-        <div class="score-text">KILLS <span id="kill-count">0</span></div>
-        <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
+
+    <!-- 方案 A 控制層：左搖桿 + 右側清晰雙鍵 -->
+    <div class="controls-layer">
+      <div id="joystick-base">
+        <div id="joystick-stick"></div>
       </div>
-      <div class="timer-text" id="time-display">00:00</div>
-      <a href="manual.html" class="doc-link">玩法手冊</a>
+      <div class="action-buttons">
+        <button id="btn-echo" class="btn-action btn-echo">
+          <span id="echo-badge" class="btn-badge">2</span>
+          <span class="btn-icon">REWIND</span>
+          <span class="btn-lbl" id="echo-lbl">回溯</span>
+        </button>
+        <button id="btn-swap" class="btn-action btn-swap disabled">
+          <span class="btn-icon">SWAP</span>
+          <span class="btn-lbl">換位</span>
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- 方案 A 控制層：左搖桿 + 右側清晰雙鍵 -->
-  <div class="controls-layer">
-    <div id="joystick-base">
-      <div id="joystick-stick"></div>
+    <!-- 遊戲首頁 (Title Screen) -->
+    <div id="home-screen" class="home-screen">
+      <div class="game-logo">殘像</div>
+      <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
+      <div class="version-tag">Version 0.0.5</div>
+      <button id="btn-start" class="btn-start">START GAME</button>
+      <div class="home-features">
+        <a href="manual.html" class="home-link-btn">玩法手冊</a>
+        <button onclick="window.location.href=window.location.pathname+'?t='+Date.now()" class="home-link-btn" style="cursor: pointer;">強制重整</button>
+      </div>
     </div>
-    <div class="action-buttons">
-      <button id="btn-echo" class="btn-action btn-echo">
-        <span class="btn-icon">REWIND</span>
-        <span class="btn-lbl" id="echo-lbl">回溯</span>
-      </button>
-      <button id="btn-swap" class="btn-action btn-swap disabled">
-        <span class="btn-icon">SWAP</span>
-        <span class="btn-lbl">換位</span>
-      </button>
+
+    <!-- 升級彈窗 -->
+    <div id="upgrade-modal" class="upgrade-modal">
+      <div class="upgrade-title">選擇時空突破天賦</div>
+      <div id="card-list" class="card-list"></div>
     </div>
-  </div>
 
-  <!-- 遊戲首頁 (Title Screen) -->
-  <div id="home-screen" class="home-screen">
-    <div class="game-logo">殘像</div>
-    <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
-    <div class="version-tag">Version 0.0.4</div>
-    <button id="btn-start" class="btn-start">START GAME</button>
-    <div class="home-features">
-      <a href="manual.html" class="home-link-btn">玩法手冊</a>
-      <button onclick="window.location.href=window.location.pathname+'?t='+Date.now()" class="home-link-btn" style="cursor: pointer;">強制重整</button>
+    <!-- 結算彈窗 -->
+    <div id="gameover-modal" class="gameover-modal">
+      <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">時空線崩塌</h2>
+      <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
+      <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
+      <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
     </div>
-  </div>
-
-  <!-- 升級彈窗 -->
-  <div id="upgrade-modal" class="upgrade-modal">
-    <div class="upgrade-title">選擇時空突破天賦</div>
-    <div id="card-list" class="card-list"></div>
-  </div>
-
-  <!-- 結算彈窗 -->
-  <div id="gameover-modal" class="gameover-modal">
-    <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">時空線崩塌</h2>
-    <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
-    <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
-    <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
   </div>
 
   <script>
     // --- 遊戲核心引擎 ---
+    const root = document.getElementById('game-root');
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
 
     let width = 0, height = 0;
+    let isPortraitMode = false;
+
     function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+
+      // 若手機直拿 (winW < winH)，將根容器旋轉 90 度適配成橫向畫面
+      if (winW < winH) {
+        isPortraitMode = true;
+        root.classList.add('is-rotated-portrait');
+        root.style.width = `${winH}px`;
+        root.style.height = `${winW}px`;
+        root.style.transform = `rotate(90deg) translateY(-${winW}px)`;
+        
+        width = canvas.width = winH;
+        height = canvas.height = winW;
+      } else {
+        // 手機正常橫拿 (winW >= winH)，0 度原生滿版
+        isPortraitMode = false;
+        root.classList.remove('is-rotated-portrait');
+        root.style.width = '100%';
+        root.style.height = '100%';
+        root.style.transform = 'none';
+
+        width = canvas.width = winW;
+        height = canvas.height = winH;
+      }
     }
     window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(resize, 100);
+    });
     resize();
+
+    // 嘗試調用 Screen Orientation API 鎖定橫向 (若瀏覽器支援)
+    function lockLandscape() {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }
 
     // 遊戲狀態
     const STATE = {
@@ -648,9 +721,12 @@
       attackSpeed: 16,
       shootCount: 1,
       invulnerable: 0,
-      echoCd: 0,
-      maxEchoCd: 240, // 4 秒
-      maxEchoCount: 2,
+      // 回溯充能機制 (基礎 2 次充能，點擊升級可擴充)
+      echoCharges: 2,
+      maxEchoCharges: 2,
+      echoChargeTimer: 0,
+      maxEchoChargeCd: 150, // 2.5 秒恢復 1 點充能
+      maxEchoCount: 2, // 同時在場最大殘像數
       history: [],
       maxHistory: 180,
       resonanceDmg: 0.9,
@@ -743,8 +819,17 @@
     });
 
     function handleJoyDrag(pos) {
-      const dx = pos.clientX - joyOrigin.x;
-      const dy = pos.clientY - joyOrigin.y;
+      let rawDx = pos.clientX - joyOrigin.x;
+      let rawDy = pos.clientY - joyOrigin.y;
+
+      // 若處於直向旋轉 90 度模式，需將螢幕座標系反轉 90 度映射到遊戲座標系
+      let dx = rawDx;
+      let dy = rawDy;
+      if (isPortraitMode) {
+        dx = rawDy;
+        dy = -rawDx;
+      }
+
       const dist = Math.hypot(dx, dy);
       const maxR = 32;
       const angle = Math.atan2(dy, dx);
@@ -792,38 +877,45 @@
         e.stopPropagation();
       }
       AudioEngine.init();
+      lockLandscape();
       STATE.isStarted = true;
       homeScreen.classList.add('hidden');
     };
     btnStart.addEventListener('pointerdown', startGame);
     btnStart.addEventListener('click', startGame);
 
-    // 觸發回溯
+    // 觸發回溯 (消耗 1 次充能，只要有充能即可無縫連放)
     function triggerEcho() {
-      if (player.echoCd > 0 || player.history.length < 20) return;
+      if (player.echoCharges <= 0 || player.history.length < 15) return;
       AudioEngine.playRewind();
       STATE.shake = 8;
+
+      player.echoCharges--;
+      if (player.echoChargeTimer <= 0) {
+        player.echoChargeTimer = player.maxEchoChargeCd;
+      }
 
       const oldState = player.history[0];
       const recordedActions = [...player.history];
 
+      // 若場上殘像超過上限，頂替最早的殘像
       if (echoes.length >= player.maxEchoCount) {
         echoes.shift();
       }
 
+      // 殘像存活延長至 8 秒 (480 幀)，軌跡自動循環重播
       echoes.push({
         frames: recordedActions,
         currentFrame: 0,
         x: player.x,
         y: player.y,
-        maxLife: recordedActions.length
+        lifeTimer: 480 // 8 秒超長駐留
       });
 
       player.x = oldState.x;
       player.y = oldState.y;
       player.invulnerable = 35;
-      player.echoCd = player.maxEchoCd;
-      player.history = [];
+      player.history = []; // 清空重記
 
       for (let i = 0; i < 16; i++) {
         const ang = Math.random() * Math.PI * 2;
@@ -906,14 +998,18 @@
       {
         id: 'multiecho',
         title: '多重鏡像',
-        desc: '殘像上限 +1（解鎖三角形多維殺陣！）',
+        desc: '殘像上限 +1，回溯充能次數 +1（解鎖多維湮滅殺陣！）',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="5" r="3" fill="rgba(168, 85, 247, 0.4)" />
           <circle cx="5" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
           <circle cx="19" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
           <polygon points="12,5 5,18 19,18" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3 2" />
         </svg>`,
-        apply: () => player.maxEchoCount++
+        apply: () => {
+          player.maxEchoCount++;
+          player.maxEchoCharges++;
+          player.echoCharges++;
+        }
       },
       {
         id: 'orbital',
@@ -930,14 +1026,14 @@
       {
         id: 'cooldown',
         title: '時空壓縮',
-        desc: '回溯冷卻時間 -25%',
+        desc: '回溯充能時間 -30%',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="9" />
           <polyline points="12 6 12 12 16 14" />
           <path d="M4 4 L2 6" stroke="#38bdf8" />
           <path d="M20 4 L22 6" stroke="#38bdf8" />
         </svg>`,
-        apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75)
+        apply: () => player.maxEchoChargeCd = Math.max(60, Math.floor(player.maxEchoChargeCd * 0.7))
       },
       {
         id: 'heal',
@@ -1018,8 +1114,16 @@
         player.history.shift();
       }
 
-      if (player.invulnerable > 0) player.invulnerable--;
-      if (player.echoCd > 0) player.echoCd--;
+      // 回溯充能恢復邏輯 (低於最大充能時自動倒數充能)
+      if (player.echoCharges < player.maxEchoCharges) {
+        player.echoChargeTimer--;
+        if (player.echoChargeTimer <= 0) {
+          player.echoCharges++;
+          if (player.echoCharges < player.maxEchoCharges) {
+            player.echoChargeTimer = player.maxEchoChargeCd;
+          }
+        }
+      }
 
       // 2. 自動射擊
       player.attackCd--;
@@ -1046,11 +1150,13 @@
         }
       }
 
-      // 3. 殘像更新
+      // 3. 殘像更新 (循環重播軌跡，持續存活 8 秒)
       for (let i = echoes.length - 1; i >= 0; i--) {
         const ec = echoes[i];
-        if (ec.currentFrame < ec.frames.length) {
-          const record = ec.frames[ec.currentFrame];
+        ec.lifeTimer--;
+
+        if (ec.frames.length > 0) {
+          const record = ec.frames[ec.currentFrame % ec.frames.length];
           ec.x = record.x;
           ec.y = record.y;
           ec.currentFrame++;
@@ -1070,7 +1176,9 @@
               });
             }
           }
-        } else {
+        }
+
+        if (ec.lifeTimer <= 0) {
           for (let p = 0; p < 12; p++) {
             const ang = Math.random() * Math.PI * 2;
             particles.push({
@@ -1453,14 +1561,20 @@
       const ss = String(sec % 60).padStart(2, '0');
       document.getElementById('time-display').innerText = `${mm}:${ss}`;
 
-      // 按鈕狀態反饋
+      // 按鈕狀態反饋 (文字保持「回溯」，次數以右上角角標「1」「2」呈現)
       const echoLbl = document.getElementById('echo-lbl');
-      if (player.echoCd > 0) {
+      const echoBadge = document.getElementById('echo-badge');
+      if (player.echoCharges <= 0) {
         btnEcho.classList.add('disabled');
-        echoLbl.innerText = `${(player.echoCd / 60).toFixed(1)}s`;
+        echoLbl.innerText = `${(player.echoChargeTimer / 60).toFixed(1)}s`;
+        if (echoBadge) echoBadge.style.display = 'none';
       } else {
         btnEcho.classList.remove('disabled');
         echoLbl.innerText = '回溯';
+        if (echoBadge) {
+          echoBadge.style.display = 'flex';
+          echoBadge.innerText = player.echoCharges;
+        }
       }
 
       if (echoes.length > 0) {
@@ -1769,7 +1883,44 @@
         }
       }
 
-      // 6. 玩家本體 (半徑 10px)
+      // 6. 3 秒前「時空回溯預覽殘像」 (Ghost Preview)
+      // 讓玩家清晰預見按下「回溯」後的瞬移著陸點與過去殘影
+      if (player.history.length >= 15 && player.echoCharges > 0) {
+        const previewState = player.history[0];
+        ctx.save();
+        
+        // 本體到 3 秒前殘像之間的量子連繫虛線
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(previewState.x, previewState.y);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+
+        // 3 秒前淺色半透明虛影本體 (動態呼吸微光)
+        const pulse = 0.35 + Math.sin(frameCount * 0.15) * 0.15;
+        ctx.globalAlpha = pulse;
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(previewState.x, previewState.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 中心時空錨點
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(previewState.x, previewState.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // 7. 玩家本體 (半徑 10px)
       ctx.save();
       if (player.invulnerable > 0 && Math.floor(frameCount / 4) % 2 === 0) {
         ctx.globalAlpha = 0.5;
