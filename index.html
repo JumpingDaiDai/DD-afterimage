@@ -1198,13 +1198,9 @@
           continue;
         }
 
-        // 邊界反彈
-        if (orb.x < orb.radius) { orb.x = orb.radius; orb.vx *= -1; }
-        if (orb.x > width - orb.radius) { orb.x = width - orb.radius; orb.vx *= -1; }
-        if (orb.y < orb.radius) { orb.y = orb.radius; orb.vy *= -1; }
-        if (orb.y > height - orb.radius) { orb.y = height - orb.radius; orb.vy *= -1; }
-
-        if (orb.life <= 0) {
+        // 穿透飛出螢幕邊界外直接自然消逝（不反彈）
+        const isOutOfScreen = orb.x < -50 || orb.x > width + 50 || orb.y < -50 || orb.y > height + 50;
+        if (orb.life <= 0 || isOutOfScreen) {
           energyOrbs.splice(i, 1);
         }
       }
