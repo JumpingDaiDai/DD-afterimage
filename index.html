@@ -235,17 +235,21 @@
       box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
     }
     .card-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: rgba(56, 189, 248, 0.15);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(56, 189, 248, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 900;
-      font-size: 13px;
-      color: var(--primary);
+      flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+    }
+    .card-icon svg {
+      width: 24px;
+      height: 24px;
+      display: block;
     }
     .card-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
     .card-info p { font-size: 11px; color: #94a3b8; }
@@ -803,15 +807,89 @@
       }
     }
 
-    // 升級天賦
+    // 升級天賦與向量 SVG 圖示設計 (零外部依賴、純向量幾何繪製)
     const UPGRADES = [
-      { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: 'SHT', apply: () => player.shootCount++ },
-      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: 'SPD', apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75) },
-      { id: 'resonance', title: '共振光刃', desc: '殘像連線/結界雷射傷害 +50%', icon: 'LAS', apply: () => player.resonanceDmg += 0.5 },
-      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（解鎖三角形多維殺陣！）', icon: 'ECHO', apply: () => player.maxEchoCount++ },
-      { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: 'BLD', apply: () => player.orbitalBlade++ },
-      { id: 'cooldown', title: '時空壓縮', desc: '回溯冷卻時間 -25%', icon: 'CDR', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
-      { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: 'HP+', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
+      {
+        id: 'multishot',
+        title: '雙重散射',
+        desc: '主武器發射彈幕數 +1',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5" cy="12" r="2.5" fill="#38bdf8" />
+          <line x1="7.5" y1="12" x2="19" y2="6" stroke="#38bdf8" />
+          <line x1="7.5" y1="12" x2="20" y2="12" stroke="#38bdf8" />
+          <line x1="7.5" y1="12" x2="19" y2="18" stroke="#38bdf8" />
+          <polygon points="19,4 22,6 19,8" fill="#38bdf8" />
+          <polygon points="20,10 23,12 20,14" fill="#38bdf8" />
+          <polygon points="19,16 22,18 19,20" fill="#38bdf8" />
+        </svg>`,
+        apply: () => player.shootCount++
+      },
+      {
+        id: 'attackspeed',
+        title: '超頻加速',
+        desc: '攻擊間隔縮短 25%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(250, 204, 21, 0.25)" />
+        </svg>`,
+        apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75)
+      },
+      {
+        id: 'resonance',
+        title: '共振光刃',
+        desc: '殘像連線/結界雷射傷害 +50%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" fill="rgba(236, 72, 153, 0.2)" />
+          <line x1="2" y1="12" x2="22" y2="12" stroke="#ec4899" stroke-dasharray="2 2" />
+          <circle cx="12" cy="12" r="3" fill="#ec4899" />
+        </svg>`,
+        apply: () => player.resonanceDmg += 0.5
+      },
+      {
+        id: 'multiecho',
+        title: '多重鏡像',
+        desc: '殘像上限 +1（解鎖三角形多維殺陣！）',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="3" fill="rgba(168, 85, 247, 0.4)" />
+          <circle cx="5" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
+          <circle cx="19" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
+          <polygon points="12,5 5,18 19,18" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3 2" />
+        </svg>`,
+        apply: () => player.maxEchoCount++
+      },
+      {
+        id: 'orbital',
+        title: '軌道切割刃',
+        desc: '身邊新增一枚防護光刃',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8" stroke="#facc15" stroke-dasharray="3 3" />
+          <circle cx="12" cy="12" r="3" fill="#38bdf8" />
+          <circle cx="12" cy="4" r="2.5" fill="#facc15" />
+          <circle cx="12" cy="20" r="2.5" fill="#facc15" />
+        </svg>`,
+        apply: () => player.orbitalBlade++
+      },
+      {
+        id: 'cooldown',
+        title: '時空壓縮',
+        desc: '回溯冷卻時間 -25%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <polyline points="12 6 12 12 16 14" />
+          <path d="M4 4 L2 6" stroke="#38bdf8" />
+          <path d="M20 4 L22 6" stroke="#38bdf8" />
+        </svg>`,
+        apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75)
+      },
+      {
+        id: 'heal',
+        title: '奈米修復',
+        desc: '立即恢復 40 點生命值',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="3" width="6" height="18" rx="2" fill="rgba(239, 68, 68, 0.3)" />
+          <rect x="3" y="9" width="18" height="6" rx="2" fill="rgba(239, 68, 68, 0.3)" />
+        </svg>`,
+        apply: () => player.hp = Math.min(player.maxHp, player.hp + 40)
+      }
     ];
 
     function showUpgradeModal() {
