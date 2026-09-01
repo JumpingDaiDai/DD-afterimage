@@ -700,14 +700,19 @@
       window.addEventListener(evt, e => e.preventDefault(), { passive: false, capture: true });
     });
 
-    // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡
+    // 針對全螢幕 window 阻斷非按鈕區域的系統長按放大鏡 (排除所有按鈕與互動元件)
     window.addEventListener('touchstart', e => {
-      // 判斷是否為輸入表單等原生元件，其餘遊戲畫面全域 preventDefault 防止放大鏡與雙擊縮放
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-        return;
-      }
-      if (e.cancelable) {
-        // 防止 Safari 長按放大鏡
+      const isInteractive = e.target && (
+        e.target.closest('button') || 
+        e.target.closest('a') || 
+        e.target.closest('#joystick-base') ||
+        e.target.closest('.upgrade-card') ||
+        e.target.closest('.btn-restart') ||
+        e.target.tagName === 'INPUT' || 
+        e.target.tagName === 'TEXTAREA'
+      );
+      if (!isInteractive && e.cancelable) {
+        // 僅在非互動區域防止 Safari 長按放大鏡與手勢
         e.preventDefault();
       }
     }, { passive: false, capture: true });
