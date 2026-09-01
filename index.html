@@ -376,10 +376,82 @@
       transition: background 0.2s;
     }
     .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
+
+    /* 橫向鎖定遮罩 (Landscape Orientation Guard) */
+    .orientation-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      background: #070913;
+      z-index: 99999;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      color: #fff;
+    }
+    .rotate-icon-container {
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      animation: rotatePhone 2.2s ease-in-out infinite;
+    }
+    .rotate-icon-container svg {
+      width: 36px;
+      height: 36px;
+    }
+    @keyframes rotatePhone {
+      0%, 20% { transform: rotate(0deg); }
+      50%, 80% { transform: rotate(90deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .orientation-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #38bdf8;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .orientation-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+
+    /* 當裝置處於直向模式時強制呼出鎖定遮罩 */
+    @media (orientation: portrait) {
+      .orientation-overlay {
+        display: flex;
+      }
+    }
   </style>
 </head>
 <body>
   <canvas id="game-canvas"></canvas>
+ 
+  <!-- 橫向螢幕鎖定提示遮罩 (直向時強制提示旋轉) -->
+  <div id="orientation-overlay" class="orientation-overlay">
+    <div class="rotate-icon-container">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="3" />
+        <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="3" />
+        <path d="M18 8 L22 12 L18 16" stroke="#facc15" stroke-width="1.8" />
+      </svg>
+    </div>
+    <div class="orientation-title">請旋轉裝置至橫向</div>
+    <div class="orientation-desc">《殘像》為滿版橫向沉浸式作戰設計，請將您的手機或平板旋轉為橫向以獲得最佳視野與操作體驗。</div>
+  </div>
 
   <!-- 頂部 HUD -->
   <div class="hud">
@@ -458,7 +530,17 @@
       height = canvas.height = window.innerHeight;
     }
     window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(resize, 100);
+    });
     resize();
+
+    // 嘗試調用 Screen Orientation API 鎖定橫向 (若瀏覽器支援)
+    function lockLandscape() {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }
 
     // 遊戲狀態
     const STATE = {
@@ -814,6 +896,7 @@
         e.stopPropagation();
       }
       AudioEngine.init();
+      lockLandscape();
       STATE.isStarted = true;
       homeScreen.classList.add('hidden');
     };
