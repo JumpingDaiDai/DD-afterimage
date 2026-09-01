@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Afterimage">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
-  <title>⏳ 殘像 (Afterimage) v0.0.2</title>
+  <title>殘像 (Afterimage) v0.0.2</title>
   <style>
     :root {
       --bg: #070913;
@@ -98,7 +101,7 @@
       text-align: right;
       pointer-events: auto;
     }
-    .score-text { font-size: 14px; font-weight: 800; color: var(--gold); }
+    .score-text { font-size: 13px; font-weight: 800; color: var(--gold); }
     .timer-text { font-size: 11px; color: #cbd5e1; font-family: monospace; }
     .doc-link {
       font-size: 10px;
@@ -176,8 +179,8 @@
       background: radial-gradient(circle, #facc15, #ca8a04);
       box-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
     }
-    .btn-icon { font-size: 20px; }
-    .btn-lbl { font-size: 9px; font-weight: 800; color: #fff; margin-top: 1px; }
+    .btn-icon { font-size: 15px; font-weight: 900; }
+    .btn-lbl { font-size: 10px; font-weight: 800; color: #fff; margin-top: 1px; }
 
     /* 升級三選一彈窗 (z-index 提高至 200，pointer-events: auto) */
     .upgrade-modal {
@@ -231,7 +234,19 @@
       background: #243248;
       box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
     }
-    .card-icon { font-size: 28px; }
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--primary);
+    }
     .card-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
     .card-info p { font-size: 11px; color: #94a3b8; }
 
@@ -358,11 +373,11 @@
     </div>
     <div class="hud-right">
       <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-        <div class="score-text">💀 <span id="kill-count">0</span></div>
-        <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">⛶</button>
+        <div class="score-text">KILLS <span id="kill-count">0</span></div>
+        <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
       </div>
       <div class="timer-text" id="time-display">00:00</div>
-      <a href="manual.html" class="doc-link">📖 玩法手冊</a>
+      <a href="manual.html" class="doc-link">玩法手冊</a>
     </div>
   </div>
 
@@ -373,11 +388,11 @@
     </div>
     <div class="action-buttons">
       <button id="btn-echo" class="btn-action btn-echo">
-        <span class="btn-icon">⏳</span>
+        <span class="btn-icon">REWIND</span>
         <span class="btn-lbl" id="echo-lbl">回溯</span>
       </button>
       <button id="btn-swap" class="btn-action btn-swap disabled">
-        <span class="btn-icon">🔀</span>
+        <span class="btn-icon">SWAP</span>
         <span class="btn-lbl">換位</span>
       </button>
     </div>
@@ -385,28 +400,28 @@
 
   <!-- 遊戲首頁 (Title Screen) -->
   <div id="home-screen" class="home-screen">
-    <div class="game-logo">⏳ 殘像</div>
+    <div class="game-logo">殘像</div>
     <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
     <div class="version-tag">Version 0.0.2</div>
     <button id="btn-start" class="btn-start">START GAME</button>
     <div class="home-features">
-      <a href="manual.html" class="home-link-btn">📖 玩法手冊</a>
-      <a href="../index.html" class="home-link-btn">🏠 遊戲大廳</a>
+      <a href="manual.html" class="home-link-btn">玩法手冊</a>
+      <button onclick="window.location.href=window.location.pathname+'?t='+Date.now()" class="home-link-btn" style="cursor: pointer;">強制重整</button>
     </div>
   </div>
 
   <!-- 升級彈窗 -->
   <div id="upgrade-modal" class="upgrade-modal">
-    <div class="upgrade-title">⚡ 選擇時空突破天賦</div>
+    <div class="upgrade-title">選擇時空突破天賦</div>
     <div id="card-list" class="card-list"></div>
   </div>
 
   <!-- 結算彈窗 -->
   <div id="gameover-modal" class="gameover-modal">
-    <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">💀 時空線崩塌</h2>
+    <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">時空線崩塌</h2>
     <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
     <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
-    <button class="btn-restart" onclick="location.reload()">🔄 重啟時間線</button>
+    <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
   </div>
 
   <script>
@@ -790,13 +805,13 @@
 
     // 升級天賦
     const UPGRADES = [
-      { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: '🔫', apply: () => player.shootCount++ },
-      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: '⚡', apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75) },
-      { id: 'resonance', title: '共振光刃', desc: '殘像連線/結界雷射傷害 +50%', icon: '💠', apply: () => player.resonanceDmg += 0.5 },
-      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（解鎖三角形多維殺陣！）', icon: '👥', apply: () => player.maxEchoCount++ },
-      { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: '🌀', apply: () => player.orbitalBlade++ },
-      { id: 'cooldown', title: '時空壓縮', desc: '回溯冷卻時間 -25%', icon: '⏳', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
-      { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: '💖', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
+      { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: 'SHT', apply: () => player.shootCount++ },
+      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: 'SPD', apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75) },
+      { id: 'resonance', title: '共振光刃', desc: '殘像連線/結界雷射傷害 +50%', icon: 'LAS', apply: () => player.resonanceDmg += 0.5 },
+      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（解鎖三角形多維殺陣！）', icon: 'ECHO', apply: () => player.maxEchoCount++ },
+      { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: 'BLD', apply: () => player.orbitalBlade++ },
+      { id: 'cooldown', title: '時空壓縮', desc: '回溯冷卻時間 -25%', icon: 'CDR', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
+      { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: 'HP+', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
     ];
 
     function showUpgradeModal() {
