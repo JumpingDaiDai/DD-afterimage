@@ -377,157 +377,129 @@
     }
     .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
 
-    /* 橫向鎖定遮罩 (Landscape Orientation Guard) */
-    .orientation-overlay {
-      position: fixed;
+    .home-link-btn:active { background: rgba(255, 255, 255, 0.12); }
+
+    /* 全局遊戲根容器 (支援直向時強制 90 度橫置) */
+    #game-root {
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100dvh;
-      background: #070913;
-      z-index: 99999;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 24px;
-      color: #fff;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      transform-origin: top left;
     }
-    .rotate-icon-container {
-      width: 68px;
-      height: 68px;
-      border-radius: 16px;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1.5px solid rgba(56, 189, 248, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      animation: rotatePhone 2.2s ease-in-out infinite;
-    }
-    .rotate-icon-container svg {
-      width: 36px;
-      height: 36px;
-    }
-    @keyframes rotatePhone {
-      0%, 20% { transform: rotate(0deg); }
-      50%, 80% { transform: rotate(90deg); }
-      100% { transform: rotate(0deg); }
-    }
-    .orientation-title {
-      font-size: 20px;
-      font-weight: 900;
-      color: #38bdf8;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-    .orientation-desc {
-      font-size: 13px;
-      color: #94a3b8;
-      line-height: 1.6;
-      max-width: 280px;
-    }
-
-    /* 當裝置處於直向模式時強制呼出鎖定遮罩 */
-    @media (orientation: portrait) {
-      .orientation-overlay {
-        display: flex;
-      }
+    #game-root.is-rotated-portrait {
+      position: fixed;
+      transform-origin: 0 0;
     }
   </style>
 </head>
 <body>
-  <canvas id="game-canvas"></canvas>
- 
-  <!-- 橫向螢幕鎖定提示遮罩 (直向時強制提示旋轉) -->
-  <div id="orientation-overlay" class="orientation-overlay">
-    <div class="rotate-icon-container">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="5" y="2" width="14" height="20" rx="3" />
-        <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="3" />
-        <path d="M18 8 L22 12 L18 16" stroke="#facc15" stroke-width="1.8" />
-      </svg>
-    </div>
-    <div class="orientation-title">請旋轉裝置至橫向</div>
-    <div class="orientation-desc">《殘像》為滿版橫向沉浸式作戰設計，請將您的手機或平板旋轉為橫向以獲得最佳視野與操作體驗。</div>
-  </div>
+  <div id="game-root">
+    <canvas id="game-canvas"></canvas>
 
-  <!-- 頂部 HUD -->
-  <div class="hud">
-    <div class="hud-left">
-      <div class="bar-container">
-        <span class="bar-label">HP</span>
-        <div class="bar-track"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+    <!-- 頂部 HUD -->
+    <div class="hud">
+      <div class="hud-left">
+        <div class="bar-container">
+          <span class="bar-label">HP</span>
+          <div class="bar-track"><div id="hp-bar" class="bar-fill hp-fill"></div></div>
+        </div>
+        <div class="bar-container">
+          <span class="bar-label">LV.<span id="level-num">1</span></span>
+          <div class="bar-track"><div id="exp-bar" class="bar-fill exp-fill" style="width: 0%;"></div></div>
+        </div>
       </div>
-      <div class="bar-container">
-        <span class="bar-label">LV.<span id="level-num">1</span></span>
-        <div class="bar-track"><div id="exp-bar" class="bar-fill exp-fill" style="width: 0%;"></div></div>
+      <div class="hud-right">
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+          <div class="score-text">KILLS <span id="kill-count">0</span></div>
+          <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
+        </div>
+        <div class="timer-text" id="time-display">00:00</div>
+        <a href="manual.html" class="doc-link">玩法手冊</a>
       </div>
     </div>
-    <div class="hud-right">
-      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-        <div class="score-text">KILLS <span id="kill-count">0</span></div>
-        <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
+
+    <!-- 方案 A 控制層：左搖桿 + 右側清晰雙鍵 -->
+    <div class="controls-layer">
+      <div id="joystick-base">
+        <div id="joystick-stick"></div>
       </div>
-      <div class="timer-text" id="time-display">00:00</div>
-      <a href="manual.html" class="doc-link">玩法手冊</a>
+      <div class="action-buttons">
+        <button id="btn-echo" class="btn-action btn-echo">
+          <span id="echo-badge" class="btn-badge">2</span>
+          <span class="btn-icon">REWIND</span>
+          <span class="btn-lbl" id="echo-lbl">回溯</span>
+        </button>
+        <button id="btn-swap" class="btn-action btn-swap disabled">
+          <span class="btn-icon">SWAP</span>
+          <span class="btn-lbl">換位</span>
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- 方案 A 控制層：左搖桿 + 右側清晰雙鍵 -->
-  <div class="controls-layer">
-    <div id="joystick-base">
-      <div id="joystick-stick"></div>
+    <!-- 遊戲首頁 (Title Screen) -->
+    <div id="home-screen" class="home-screen">
+      <div class="game-logo">殘像</div>
+      <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
+      <div class="version-tag">Version 0.0.4</div>
+      <button id="btn-start" class="btn-start">START GAME</button>
+      <div class="home-features">
+        <a href="manual.html" class="home-link-btn">玩法手冊</a>
+        <button onclick="window.location.href=window.location.pathname+'?t='+Date.now()" class="home-link-btn" style="cursor: pointer;">強制重整</button>
+      </div>
     </div>
-    <div class="action-buttons">
-      <button id="btn-echo" class="btn-action btn-echo">
-        <span id="echo-badge" class="btn-badge">2</span>
-        <span class="btn-icon">REWIND</span>
-        <span class="btn-lbl" id="echo-lbl">回溯</span>
-      </button>
-      <button id="btn-swap" class="btn-action btn-swap disabled">
-        <span class="btn-icon">SWAP</span>
-        <span class="btn-lbl">換位</span>
-      </button>
+
+    <!-- 升級彈窗 -->
+    <div id="upgrade-modal" class="upgrade-modal">
+      <div class="upgrade-title">選擇時空突破天賦</div>
+      <div id="card-list" class="card-list"></div>
     </div>
-  </div>
 
-  <!-- 遊戲首頁 (Title Screen) -->
-  <div id="home-screen" class="home-screen">
-    <div class="game-logo">殘像</div>
-    <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
-    <div class="version-tag">Version 0.0.4</div>
-    <button id="btn-start" class="btn-start">START GAME</button>
-    <div class="home-features">
-      <a href="manual.html" class="home-link-btn">玩法手冊</a>
-      <button onclick="window.location.href=window.location.pathname+'?t='+Date.now()" class="home-link-btn" style="cursor: pointer;">強制重整</button>
+    <!-- 結算彈窗 -->
+    <div id="gameover-modal" class="gameover-modal">
+      <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">時空線崩塌</h2>
+      <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
+      <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
+      <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
     </div>
-  </div>
-
-  <!-- 升級彈窗 -->
-  <div id="upgrade-modal" class="upgrade-modal">
-    <div class="upgrade-title">選擇時空突破天賦</div>
-    <div id="card-list" class="card-list"></div>
-  </div>
-
-  <!-- 結算彈窗 -->
-  <div id="gameover-modal" class="gameover-modal">
-    <h2 style="font-size: 26px; color: #ef4444; margin-bottom: 6px;">時空線崩塌</h2>
-    <p style="color: #94a3b8; font-size: 13px;">你在時空狂潮中堅持了 <span id="final-time" style="color: #fff; font-weight: bold;"></span></p>
-    <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">消滅異變體：<span id="final-kills" style="color: var(--gold); font-weight: bold;"></span></p>
-    <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
   </div>
 
   <script>
     // --- 遊戲核心引擎 ---
+    const root = document.getElementById('game-root');
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
 
     let width = 0, height = 0;
+    let isPortraitMode = false;
+
     function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+
+      // 若手機直拿 (winW < winH)，將根容器旋轉 90 度適配成橫向畫面
+      if (winW < winH) {
+        isPortraitMode = true;
+        root.classList.add('is-rotated-portrait');
+        root.style.width = `${winH}px`;
+        root.style.height = `${winW}px`;
+        root.style.transform = `rotate(90deg) translateY(-${winW}px)`;
+        
+        width = canvas.width = winH;
+        height = canvas.height = winW;
+      } else {
+        // 手機正常橫拿 (winW >= winH)，0 度原生滿版
+        isPortraitMode = false;
+        root.classList.remove('is-rotated-portrait');
+        root.style.width = '100%';
+        root.style.height = '100%';
+        root.style.transform = 'none';
+
+        width = canvas.width = winW;
+        height = canvas.height = winH;
+      }
     }
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', () => {
@@ -847,8 +819,17 @@
     });
 
     function handleJoyDrag(pos) {
-      const dx = pos.clientX - joyOrigin.x;
-      const dy = pos.clientY - joyOrigin.y;
+      let rawDx = pos.clientX - joyOrigin.x;
+      let rawDy = pos.clientY - joyOrigin.y;
+
+      // 若處於直向旋轉 90 度模式，需將螢幕座標系反轉 90 度映射到遊戲座標系
+      let dx = rawDx;
+      let dy = rawDy;
+      if (isPortraitMode) {
+        dx = rawDy;
+        dy = -rawDx;
+      }
+
       const dist = Math.hypot(dx, dy);
       const maxR = 32;
       const angle = Math.atan2(dy, dx);
