@@ -648,9 +648,12 @@
       attackSpeed: 16,
       shootCount: 1,
       invulnerable: 0,
-      echoCd: 0,
-      maxEchoCd: 240, // 4 秒
-      maxEchoCount: 2,
+      // 回溯充能機制 (基礎 2 次充能，點擊升級可擴充)
+      echoCharges: 2,
+      maxEchoCharges: 2,
+      echoChargeTimer: 0,
+      maxEchoChargeCd: 150, // 2.5 秒恢復 1 點充能
+      maxEchoCount: 2, // 同時在場最大殘像數
       history: [],
       maxHistory: 180,
       resonanceDmg: 0.9,
@@ -798,32 +801,38 @@
     btnStart.addEventListener('pointerdown', startGame);
     btnStart.addEventListener('click', startGame);
 
-    // 觸發回溯
+    // 觸發回溯 (消耗 1 次充能，只要有充能即可無縫連放)
     function triggerEcho() {
-      if (player.echoCd > 0 || player.history.length < 20) return;
+      if (player.echoCharges <= 0 || player.history.length < 15) return;
       AudioEngine.playRewind();
       STATE.shake = 8;
+
+      player.echoCharges--;
+      if (player.echoChargeTimer <= 0) {
+        player.echoChargeTimer = player.maxEchoChargeCd;
+      }
 
       const oldState = player.history[0];
       const recordedActions = [...player.history];
 
+      // 若場上殘像超過上限，頂替最早的殘像
       if (echoes.length >= player.maxEchoCount) {
         echoes.shift();
       }
 
+      // 殘像存活延長至 8 秒 (480 幀)，軌跡自動循環重播
       echoes.push({
         frames: recordedActions,
         currentFrame: 0,
         x: player.x,
         y: player.y,
-        maxLife: recordedActions.length
+        lifeTimer: 480 // 8 秒超長駐留
       });
 
       player.x = oldState.x;
       player.y = oldState.y;
       player.invulnerable = 35;
-      player.echoCd = player.maxEchoCd;
-      player.history = [];
+      player.history = []; // 清空重記
 
       for (let i = 0; i < 16; i++) {
         const ang = Math.random() * Math.PI * 2;
@@ -906,14 +915,18 @@
       {
         id: 'multiecho',
         title: '多重鏡像',
-        desc: '殘像上限 +1（解鎖三角形多維殺陣！）',
+        desc: '殘像上限 +1，回溯充能次數 +1（解鎖多維湮滅殺陣！）',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="5" r="3" fill="rgba(168, 85, 247, 0.4)" />
           <circle cx="5" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
           <circle cx="19" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
           <polygon points="12,5 5,18 19,18" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3 2" />
         </svg>`,
-        apply: () => player.maxEchoCount++
+        apply: () => {
+          player.maxEchoCount++;
+          player.maxEchoCharges++;
+          player.echoCharges++;
+        }
       },
       {
         id: 'orbital',
@@ -930,14 +943,14 @@
       {
         id: 'cooldown',
         title: '時空壓縮',
-        desc: '回溯冷卻時間 -25%',
+        desc: '回溯充能時間 -30%',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="9" />
           <polyline points="12 6 12 12 16 14" />
           <path d="M4 4 L2 6" stroke="#38bdf8" />
           <path d="M20 4 L22 6" stroke="#38bdf8" />
         </svg>`,
-        apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75)
+        apply: () => player.maxEchoChargeCd = Math.max(60, Math.floor(player.maxEchoChargeCd * 0.7))
       },
       {
         id: 'heal',
@@ -1018,8 +1031,16 @@
         player.history.shift();
       }
 
-      if (player.invulnerable > 0) player.invulnerable--;
-      if (player.echoCd > 0) player.echoCd--;
+      // 回溯充能恢復邏輯 (低於最大充能時自動倒數充能)
+      if (player.echoCharges < player.maxEchoCharges) {
+        player.echoChargeTimer--;
+        if (player.echoChargeTimer <= 0) {
+          player.echoCharges++;
+          if (player.echoCharges < player.maxEchoCharges) {
+            player.echoChargeTimer = player.maxEchoChargeCd;
+          }
+        }
+      }
 
       // 2. 自動射擊
       player.attackCd--;
@@ -1046,11 +1067,13 @@
         }
       }
 
-      // 3. 殘像更新
+      // 3. 殘像更新 (循環重播軌跡，持續存活 8 秒)
       for (let i = echoes.length - 1; i >= 0; i--) {
         const ec = echoes[i];
-        if (ec.currentFrame < ec.frames.length) {
-          const record = ec.frames[ec.currentFrame];
+        ec.lifeTimer--;
+
+        if (ec.frames.length > 0) {
+          const record = ec.frames[ec.currentFrame % ec.frames.length];
           ec.x = record.x;
           ec.y = record.y;
           ec.currentFrame++;
@@ -1070,7 +1093,9 @@
               });
             }
           }
-        } else {
+        }
+
+        if (ec.lifeTimer <= 0) {
           for (let p = 0; p < 12; p++) {
             const ang = Math.random() * Math.PI * 2;
             particles.push({
@@ -1453,14 +1478,18 @@
       const ss = String(sec % 60).padStart(2, '0');
       document.getElementById('time-display').innerText = `${mm}:${ss}`;
 
-      // 按鈕狀態反饋
+      // 按鈕狀態反饋 (顯示回溯充能次數，如 2/2 或 1/2)
       const echoLbl = document.getElementById('echo-lbl');
-      if (player.echoCd > 0) {
+      if (player.echoCharges <= 0) {
         btnEcho.classList.add('disabled');
-        echoLbl.innerText = `${(player.echoCd / 60).toFixed(1)}s`;
+        echoLbl.innerText = `${(player.echoChargeTimer / 60).toFixed(1)}s`;
       } else {
         btnEcho.classList.remove('disabled');
-        echoLbl.innerText = '回溯';
+        if (player.echoCharges < player.maxEchoCharges) {
+          echoLbl.innerText = `回溯 (${player.echoCharges}/${player.maxEchoCharges})`;
+        } else {
+          echoLbl.innerText = `回溯 (${player.echoCharges})`;
+        }
       }
 
       if (echoes.length > 0) {
