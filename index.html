@@ -164,12 +164,30 @@
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
       transition: transform 0.1s, opacity 0.2s;
+      position: relative;
     }
     .btn-action:active { transform: scale(0.9); }
     .btn-action.disabled {
       filter: grayscale(0.9);
       opacity: 0.4;
       pointer-events: none;
+    }
+    .btn-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #38bdf8;
+      color: #070913;
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+      border: 1.5px solid #070913;
     }
     .btn-echo {
       background: radial-gradient(circle, #ec4899, #be185d);
@@ -392,6 +410,7 @@
     </div>
     <div class="action-buttons">
       <button id="btn-echo" class="btn-action btn-echo">
+        <span id="echo-badge" class="btn-badge">2</span>
         <span class="btn-icon">REWIND</span>
         <span class="btn-lbl" id="echo-lbl">回溯</span>
       </button>
@@ -1478,17 +1497,19 @@
       const ss = String(sec % 60).padStart(2, '0');
       document.getElementById('time-display').innerText = `${mm}:${ss}`;
 
-      // 按鈕狀態反饋 (顯示回溯充能次數，如 2/2 或 1/2)
+      // 按鈕狀態反饋 (文字保持「回溯」，次數以右上角角標「1」「2」呈現)
       const echoLbl = document.getElementById('echo-lbl');
+      const echoBadge = document.getElementById('echo-badge');
       if (player.echoCharges <= 0) {
         btnEcho.classList.add('disabled');
         echoLbl.innerText = `${(player.echoChargeTimer / 60).toFixed(1)}s`;
+        if (echoBadge) echoBadge.style.display = 'none';
       } else {
         btnEcho.classList.remove('disabled');
-        if (player.echoCharges < player.maxEchoCharges) {
-          echoLbl.innerText = `回溯 (${player.echoCharges}/${player.maxEchoCharges})`;
-        } else {
-          echoLbl.innerText = `回溯 (${player.echoCharges})`;
+        echoLbl.innerText = '回溯';
+        if (echoBadge) {
+          echoBadge.style.display = 'flex';
+          echoBadge.innerText = player.echoCharges;
         }
       }
 
