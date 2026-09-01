@@ -1819,7 +1819,44 @@
         }
       }
 
-      // 6. 玩家本體 (半徑 10px)
+      // 6. 3 秒前「時空回溯預覽殘像」 (Ghost Preview)
+      // 讓玩家清晰預見按下「回溯」後的瞬移著陸點與過去殘影
+      if (player.history.length >= 15 && player.echoCharges > 0) {
+        const previewState = player.history[0];
+        ctx.save();
+        
+        // 本體到 3 秒前殘像之間的量子連繫虛線
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(previewState.x, previewState.y);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+
+        // 3 秒前淺色半透明虛影本體 (動態呼吸微光)
+        const pulse = 0.35 + Math.sin(frameCount * 0.15) * 0.15;
+        ctx.globalAlpha = pulse;
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(previewState.x, previewState.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 中心時空錨點
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(previewState.x, previewState.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // 7. 玩家本體 (半徑 10px)
       ctx.save();
       if (player.invulnerable > 0 && Math.floor(frameCount / 4) % 2 === 0) {
         ctx.globalAlpha = 0.5;
