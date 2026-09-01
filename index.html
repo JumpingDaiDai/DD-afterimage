@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Afterimage">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
-  <title>殘像 (Afterimage) v0.0.2</title>
+  <title>殘像 (Afterimage) v0.0.3</title>
   <style>
     :root {
       --bg: #070913;
@@ -235,17 +235,21 @@
       box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
     }
     .card-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: rgba(56, 189, 248, 0.15);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(56, 189, 248, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 900;
-      font-size: 13px;
-      color: var(--primary);
+      flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+    }
+    .card-icon svg {
+      width: 24px;
+      height: 24px;
+      display: block;
     }
     .card-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
     .card-info p { font-size: 11px; color: #94a3b8; }
@@ -402,7 +406,7 @@
   <div id="home-screen" class="home-screen">
     <div class="game-logo">殘像</div>
     <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
-    <div class="version-tag">Version 0.0.2</div>
+    <div class="version-tag">Version 0.0.3</div>
     <button id="btn-start" class="btn-start">START GAME</button>
     <div class="home-features">
       <a href="manual.html" class="home-link-btn">玩法手冊</a>
@@ -529,6 +533,62 @@
         gain.connect(this.ctx.destination);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
+      },
+      playShieldBlock() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      },
+      playOrbLaunch() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(520, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+      },
+      playOrbExplode() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(25, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      },
+      playBossSpawn() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(90, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(180, this.ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
       }
     };
 
@@ -595,12 +655,15 @@
       maxHistory: 180,
       resonanceDmg: 0.9,
       orbitalBlade: 0,
-      bladeAngle: 0
+      bladeAngle: 0,
+      orbCd: 0,
+      maxOrbCd: 180 // 每 3 秒發射一顆貫穿時空能量球
     };
 
     // 實體管理
     const echoes = [];
     const bullets = [];
+    const energyOrbs = [];
     const enemies = [];
     const gems = [];
     const particles = [];
@@ -803,15 +866,89 @@
       }
     }
 
-    // 升級天賦
+    // 升級天賦與向量 SVG 圖示設計 (零外部依賴、純向量幾何繪製)
     const UPGRADES = [
-      { id: 'multishot', title: '雙重散射', desc: '主武器發射彈幕數 +1', icon: 'SHT', apply: () => player.shootCount++ },
-      { id: 'attackspeed', title: '超頻加速', desc: '攻擊間隔縮短 25%', icon: 'SPD', apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75) },
-      { id: 'resonance', title: '共振光刃', desc: '殘像連線/結界雷射傷害 +50%', icon: 'LAS', apply: () => player.resonanceDmg += 0.5 },
-      { id: 'multiecho', title: '多重鏡像', desc: '殘像上限 +1（解鎖三角形多維殺陣！）', icon: 'ECHO', apply: () => player.maxEchoCount++ },
-      { id: 'orbital', title: '軌道切割刃', desc: '身邊新增一枚防護光刃', icon: 'BLD', apply: () => player.orbitalBlade++ },
-      { id: 'cooldown', title: '時空壓縮', desc: '回溯冷卻時間 -25%', icon: 'CDR', apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75) },
-      { id: 'heal', title: '奈米修復', desc: '立即恢復 40 點生命值', icon: 'HP+', apply: () => player.hp = Math.min(player.maxHp, player.hp + 40) }
+      {
+        id: 'multishot',
+        title: '雙重散射',
+        desc: '主武器發射彈幕數 +1',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5" cy="12" r="2.5" fill="#38bdf8" />
+          <line x1="7.5" y1="12" x2="19" y2="6" stroke="#38bdf8" />
+          <line x1="7.5" y1="12" x2="20" y2="12" stroke="#38bdf8" />
+          <line x1="7.5" y1="12" x2="19" y2="18" stroke="#38bdf8" />
+          <polygon points="19,4 22,6 19,8" fill="#38bdf8" />
+          <polygon points="20,10 23,12 20,14" fill="#38bdf8" />
+          <polygon points="19,16 22,18 19,20" fill="#38bdf8" />
+        </svg>`,
+        apply: () => player.shootCount++
+      },
+      {
+        id: 'attackspeed',
+        title: '超頻加速',
+        desc: '攻擊間隔縮短 25%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(250, 204, 21, 0.25)" />
+        </svg>`,
+        apply: () => player.attackSpeed = Math.max(7, player.attackSpeed * 0.75)
+      },
+      {
+        id: 'resonance',
+        title: '共振光刃',
+        desc: '殘像連線/結界雷射傷害 +50%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" fill="rgba(236, 72, 153, 0.2)" />
+          <line x1="2" y1="12" x2="22" y2="12" stroke="#ec4899" stroke-dasharray="2 2" />
+          <circle cx="12" cy="12" r="3" fill="#ec4899" />
+        </svg>`,
+        apply: () => player.resonanceDmg += 0.5
+      },
+      {
+        id: 'multiecho',
+        title: '多重鏡像',
+        desc: '殘像上限 +1（解鎖三角形多維殺陣！）',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="3" fill="rgba(168, 85, 247, 0.4)" />
+          <circle cx="5" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
+          <circle cx="19" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)" />
+          <polygon points="12,5 5,18 19,18" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3 2" />
+        </svg>`,
+        apply: () => player.maxEchoCount++
+      },
+      {
+        id: 'orbital',
+        title: '軌道切割刃',
+        desc: '身邊新增一枚防護光刃',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8" stroke="#facc15" stroke-dasharray="3 3" />
+          <circle cx="12" cy="12" r="3" fill="#38bdf8" />
+          <circle cx="12" cy="4" r="2.5" fill="#facc15" />
+          <circle cx="12" cy="20" r="2.5" fill="#facc15" />
+        </svg>`,
+        apply: () => player.orbitalBlade++
+      },
+      {
+        id: 'cooldown',
+        title: '時空壓縮',
+        desc: '回溯冷卻時間 -25%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <polyline points="12 6 12 12 16 14" />
+          <path d="M4 4 L2 6" stroke="#38bdf8" />
+          <path d="M20 4 L22 6" stroke="#38bdf8" />
+        </svg>`,
+        apply: () => player.maxEchoCd = Math.max(90, player.maxEchoCd * 0.75)
+      },
+      {
+        id: 'heal',
+        title: '奈米修復',
+        desc: '立即恢復 40 點生命值',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="3" width="6" height="18" rx="2" fill="rgba(239, 68, 68, 0.3)" />
+          <rect x="3" y="9" width="18" height="6" rx="2" fill="rgba(239, 68, 68, 0.3)" />
+        </svg>`,
+        apply: () => player.hp = Math.min(player.maxHp, player.hp + 40)
+      }
     ];
 
     function showUpgradeModal() {
@@ -989,7 +1126,90 @@
         }
       }
 
-      // 4. 子彈更新 (縮小半徑)
+      // 4. 自動發射貫穿時空能量球 (穿透敵人，若被本體/回溯殘像換位撞擊則引發超大範圍湮滅爆炸)
+      player.orbCd--;
+      if (player.orbCd <= 0) {
+        let nearest = null, minDist = Infinity;
+        for (const e of enemies) {
+          const d = Math.hypot(e.x - player.x, e.y - player.y);
+          if (d < minDist) { minDist = d; nearest = e; }
+        }
+        const ang = nearest ? Math.atan2(nearest.y - player.y, nearest.x - player.x) : Math.random() * Math.PI * 2;
+        energyOrbs.push({
+          x: player.x,
+          y: player.y,
+          vx: Math.cos(ang) * 4.2,
+          vy: Math.sin(ang) * 4.2,
+          radius: 12,
+          damage: 24,
+          life: 240, // 存活 4 秒
+          armDelay: 20 // 發射 20 幀後解鎖與本體碰撞（防止發射瞬間就自爆）
+        });
+        AudioEngine.playOrbLaunch();
+        player.orbCd = player.maxOrbCd;
+      }
+
+      // 更新貫穿能量球
+      for (let i = energyOrbs.length - 1; i >= 0; i--) {
+        const orb = energyOrbs[i];
+        orb.x += orb.vx;
+        orb.y += orb.vy;
+        orb.life--;
+        if (orb.armDelay > 0) orb.armDelay--;
+
+        // 能量球粒子尾跡
+        if (frameCount % 2 === 0) {
+          particles.push({
+            x: orb.x + (Math.random() - 0.5) * 8,
+            y: orb.y + (Math.random() - 0.5) * 8,
+            vx: -orb.vx * 0.2,
+            vy: -orb.vy * 0.2,
+            life: 14,
+            color: '#38bdf8',
+            size: 2.5
+          });
+        }
+
+        // 穿透所有敵人造成傷害
+        for (const e of enemies) {
+          if (Math.hypot(e.x - orb.x, e.y - orb.y) < e.radius + orb.radius) {
+            // 計算攻擊角度與 Boss 護盾
+            let blocked = false;
+            if (e.isBoss && e.hasShield) {
+              const hitAngle = Math.atan2(orb.y - e.y, orb.x - e.x);
+              const angleDiff = Math.abs(normalizeAngle(hitAngle - e.facingAngle));
+              if (angleDiff < Math.PI * 0.45) {
+                blocked = true; // 正面 160 度扇形護盾阻擋
+                AudioEngine.playShieldBlock();
+                popups.push({ x: e.x, y: e.y - 14, text: 'BLOCKED', life: 18, color: '#38bdf8' });
+              }
+            }
+            if (!blocked) {
+              e.hp -= orb.damage * 0.3; // 穿透時每幀造成高頻切割傷害
+              e.flash = 2;
+            }
+          }
+        }
+
+        // 核心機制：能量球若碰到了「自己的本體」-> 引爆大範圍時空湮滅！
+        if (orb.armDelay <= 0 && Math.hypot(player.x - orb.x, player.y - orb.y) < player.radius + orb.radius) {
+          triggerOrbSuperExplosion(orb.x, orb.y);
+          energyOrbs.splice(i, 1);
+          continue;
+        }
+
+        // 邊界反彈
+        if (orb.x < orb.radius) { orb.x = orb.radius; orb.vx *= -1; }
+        if (orb.x > width - orb.radius) { orb.x = width - orb.radius; orb.vx *= -1; }
+        if (orb.y < orb.radius) { orb.y = orb.radius; orb.vy *= -1; }
+        if (orb.y > height - orb.radius) { orb.y = height - orb.radius; orb.vy *= -1; }
+
+        if (orb.life <= 0) {
+          energyOrbs.splice(i, 1);
+        }
+      }
+
+      // 5. 普通子彈更新 (帶有 Boss 正面護盾檢測)
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.x += b.vx;
@@ -998,10 +1218,32 @@
 
         for (const e of enemies) {
           if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 3) {
-            e.hp -= b.damage;
-            e.flash = 3;
-            AudioEngine.playHit();
-            popups.push({ x: e.x, y: e.y - 8, text: b.damage, life: 20, color: b.isEcho ? '#ec4899' : '#38bdf8' });
+            let blocked = false;
+            if (e.isBoss && e.hasShield) {
+              const hitAngle = Math.atan2(b.y - e.y, b.x - e.x);
+              const angleDiff = Math.abs(normalizeAngle(hitAngle - e.facingAngle));
+              // 正面 160 度範圍被護盾完全吸收
+              if (angleDiff < Math.PI * 0.45) {
+                blocked = true;
+                AudioEngine.playShieldBlock();
+                popups.push({ x: e.x, y: e.y - 12, text: 'GUARD', life: 16, color: '#38bdf8' });
+                // 護盾火花
+                for (let p = 0; p < 4; p++) {
+                  particles.push({
+                    x: b.x, y: b.y,
+                    vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3,
+                    life: 10, color: '#38bdf8', size: 2
+                  });
+                }
+              }
+            }
+
+            if (!blocked) {
+              e.hp -= b.damage;
+              e.flash = 3;
+              AudioEngine.playHit();
+              popups.push({ x: e.x, y: e.y - 8, text: b.damage, life: 20, color: b.isEcho ? '#ec4899' : '#38bdf8' });
+            }
             b.life = 0;
             break;
           }
@@ -1009,7 +1251,12 @@
         if (b.life <= 0) bullets.splice(i, 1);
       }
 
-      // 5. 怪物生成 (怪物半徑縮減為 8px，邊界出生距離拉大至 40px)
+      // 6. 怪物與 Boss 生成 (每 45 秒生成一隻「重裝時空泰坦 Boss」)
+      const isBossTime = STATE.gameTime > 0 && STATE.gameTime % 2700 === 0;
+      if (isBossTime) {
+        spawnBoss();
+      }
+
       const spawnInterval = Math.max(18, 60 - Math.floor(STATE.gameTime / 300));
       if (frameCount % spawnInterval === 0) {
         const edge = Math.floor(Math.random() * 4);
@@ -1025,7 +1272,8 @@
           speed: 1.1 + Math.random() * 0.7,
           hp: 22 + Math.floor(STATE.gameTime / 400) * 8,
           maxHp: 22 + Math.floor(STATE.gameTime / 400) * 8,
-          flash: 0
+          flash: 0,
+          isBoss: false
         });
       }
 
@@ -1038,15 +1286,93 @@
           target = echoes[0];
         }
 
-        const angle = Math.atan2(target.y - e.y, target.x - e.x);
-        e.x += Math.cos(angle) * e.speed;
-        e.y += Math.sin(angle) * e.speed;
+        if (e.isBoss) {
+          // Boss 專屬狀態機 (追擊 -> 蓄力預警 -> 超速直線衝鋒 -> 短暫硬直)
+          e.stateTimer--;
+
+          if (e.state === 'chase') {
+            const targetAng = Math.atan2(target.y - e.y, target.x - e.x);
+            // 平滑轉向（加入角速度限制，防止瞬間調頭護盾始終擋住玩家）
+            let angleDiff = normalizeAngle(targetAng - e.facingAngle);
+            e.facingAngle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), e.turnRate);
+
+            e.x += Math.cos(e.facingAngle) * e.speed;
+            e.y += Math.sin(e.facingAngle) * e.speed;
+
+            if (e.stateTimer <= 0) {
+              // 進入蓄力狀態
+              e.state = 'windup';
+              e.stateTimer = 45; // 蓄力 0.75 秒
+              e.dashAngle = Math.atan2(player.y - e.y, player.x - e.x);
+              e.facingAngle = e.dashAngle;
+              popups.push({ x: e.x, y: e.y - 30, text: 'CHARGE LOCK', life: 30, color: '#facc15' });
+            }
+          } else if (e.state === 'windup') {
+            // 蓄力微震與聚能粒子
+            if (frameCount % 3 === 0) {
+              particles.push({
+                x: e.x + (Math.random() - 0.5) * 30,
+                y: e.y + (Math.random() - 0.5) * 30,
+                vx: -Math.cos(e.dashAngle) * 3,
+                vy: -Math.sin(e.dashAngle) * 3,
+                life: 12,
+                color: '#facc15',
+                size: 2.5
+              });
+            }
+            if (e.stateTimer <= 0) {
+              // 發動超速大直線衝撞
+              e.state = 'dash';
+              e.stateTimer = 40; // 衝刺 40 幀 (移動超過 220px，必定衝過玩家身後！)
+              STATE.shake = 10;
+              AudioEngine.playOrbLaunch();
+            }
+          } else if (e.state === 'dash') {
+            // 直線高速衝刺，不追蹤
+            e.x += Math.cos(e.dashAngle) * e.dashSpeed;
+            e.y += Math.sin(e.dashAngle) * e.dashSpeed;
+
+            // 衝刺尾跡火花
+            particles.push({
+              x: e.x - Math.cos(e.dashAngle) * e.radius,
+              y: e.y - Math.sin(e.dashAngle) * e.radius,
+              vx: (Math.random() - 0.5) * 2,
+              vy: (Math.random() - 0.5) * 2,
+              life: 16,
+              color: '#f43f5e',
+              size: 3
+            });
+
+            if (e.stateTimer <= 0) {
+              e.state = 'cooldown';
+              e.stateTimer = 60; // 衝完後短暫冷卻 1 秒，給玩家充足時間背刺！
+            }
+          } else if (e.state === 'cooldown') {
+            // 冷卻減速緩行
+            e.x += Math.cos(e.dashAngle) * 0.4;
+            e.y += Math.sin(e.dashAngle) * 0.4;
+            if (e.stateTimer <= 0) {
+              e.state = 'chase';
+              e.stateTimer = 180; // 3 秒後準備下一輪衝刺
+            }
+          }
+
+          // 邊界防出界
+          e.x = Math.max(e.radius, Math.min(width - e.radius, e.x));
+          e.y = Math.max(e.radius, Math.min(height - e.radius, e.y));
+        } else {
+          // 普通怪物追擊
+          const angle = Math.atan2(target.y - e.y, target.x - e.x);
+          e.facingAngle = angle;
+          e.x += Math.cos(angle) * e.speed;
+          e.y += Math.sin(angle) * e.speed;
+        }
 
         if (Math.hypot(e.x - player.x, e.y - player.y) < e.radius + player.radius) {
           if (player.invulnerable <= 0) {
-            player.hp -= 12;
+            player.hp -= e.isBoss ? 28 : 12;
             player.invulnerable = 30;
-            STATE.shake = 6;
+            STATE.shake = e.isBoss ? 12 : 6;
             AudioEngine.playHit();
             if (player.hp <= 0) {
               player.hp = 0;
@@ -1057,13 +1383,26 @@
 
         if (e.hp <= 0) {
           STATE.kills++;
-          gems.push({ x: e.x, y: e.y, exp: 2 });
-          for (let p = 0; p < 6; p++) {
+          if (e.isBoss) {
+            // Boss 死亡掉落大量經驗晶體與劇烈震動
+            STATE.shake = 16;
+            for (let g = 0; g < 12; g++) {
+              gems.push({ x: e.x + (Math.random() - 0.5) * 40, y: e.y + (Math.random() - 0.5) * 40, exp: 5 });
+            }
+            popups.push({ x: e.x, y: e.y - 20, text: 'BOSS DEFEATED', life: 40, color: '#facc15' });
+          } else {
+            gems.push({ x: e.x, y: e.y, exp: 2 });
+          }
+
+          for (let p = 0; p < (e.isBoss ? 24 : 6); p++) {
             const ang = Math.random() * Math.PI * 2;
             particles.push({
               x: e.x, y: e.y,
-              vx: Math.cos(ang) * 2.5, vy: Math.sin(ang) * 2.5,
-              life: 16, color: '#f43f5e', size: 1.8
+              vx: Math.cos(ang) * (e.isBoss ? 5 : 2.5),
+              vy: Math.sin(ang) * (e.isBoss ? 5 : 2.5),
+              life: e.isBoss ? 30 : 16,
+              color: e.isBoss ? '#facc15' : '#f43f5e',
+              size: e.isBoss ? 3 : 1.8
             });
           }
           enemies.splice(i, 1);
@@ -1135,7 +1474,13 @@
       }
     }
 
-    // 幾何工具
+    // 幾何工具與數值計算
+    function normalizeAngle(ang) {
+      while (ang > Math.PI) ang -= Math.PI * 2;
+      while (ang < -Math.PI) ang += Math.PI * 2;
+      return ang;
+    }
+
     function pointToSegmentDist(px, py, x1, y1, x2, y2) {
       const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
       if (l2 === 0) return Math.hypot(px - x1, py - y1);
@@ -1154,6 +1499,68 @@
         if (intersect) inside = !inside;
       }
       return inside;
+    }
+
+    // 生成「重裝時空泰坦 Boss」
+    function spawnBoss() {
+      AudioEngine.playBossSpawn();
+      STATE.shake = 12;
+      popups.push({ x: width / 2, y: height / 2 - 50, text: 'BOSS INCOMING', life: 50, color: '#ef4444' });
+
+      enemies.push({
+        x: width / 2,
+        y: -50,
+        radius: 22, // 巨大體積
+        speed: 1.6, // 提高基礎巡航移速 (原 0.65 -> 1.6)
+        baseSpeed: 1.6,
+        hp: 350 + Math.floor(STATE.gameTime / 600) * 100,
+        maxHp: 350 + Math.floor(STATE.gameTime / 600) * 100,
+        flash: 0,
+        isBoss: true,
+        hasShield: true,
+        facingAngle: Math.PI / 2,
+        // Boss 衝刺與轉向狀態機
+        state: 'chase', // chase, windup, dash, cooldown
+        stateTimer: 180, // 3秒後發動第一次大衝刺
+        dashAngle: 0,
+        dashSpeed: 5.5,
+        turnRate: 0.04 // 轉向慣性，讓 Boss 轉頭不會瞬間完成
+      });
+    }
+
+    // 觸發貫穿能量球撞擊本體之「超大範圍時空湮滅大爆炸」
+    function triggerOrbSuperExplosion(ox, oy) {
+      AudioEngine.playOrbExplode();
+      STATE.shake = 15;
+      const explodeRadius = 160; // 超大範圍
+
+      popups.push({ x: ox, y: oy - 15, text: 'SUPER NOVA', life: 35, color: '#38bdf8' });
+
+      // 對範圍內所有敵人（包含 Boss，且此大爆炸能直接穿透/瓦解護盾）造成巨大傷害
+      for (const e of enemies) {
+        const d = Math.hypot(e.x - ox, e.y - oy);
+        if (d < explodeRadius) {
+          const dmg = Math.floor(120 * (1 - d / explodeRadius) + 40);
+          e.hp -= dmg;
+          e.flash = 6;
+          popups.push({ x: e.x, y: e.y - 10, text: dmg, life: 25, color: '#38bdf8' });
+        }
+      }
+
+      // 產生壯觀的雙環擴散與粒子爆炸
+      for (let i = 0; i < 36; i++) {
+        const ang = (i / 36) * Math.PI * 2;
+        const spd = 2.5 + Math.random() * 4.5;
+        particles.push({
+          x: ox,
+          y: oy,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          life: 25,
+          color: i % 2 === 0 ? '#38bdf8' : '#facc15',
+          size: 3
+        });
+      }
     }
 
     // --- 渲染畫面 ---
@@ -1235,29 +1642,108 @@
         ctx.restore();
       }
 
-      // 3. 怪物 (縮小至 8px)
+      // 3. 怪物與 Boss 渲染
       for (const e of enemies) {
         ctx.save();
-        ctx.fillStyle = e.flash > 0 ? '#fff' : '#f43f5e';
-        ctx.strokeStyle = '#9f1239';
-        ctx.lineWidth = 1.5;
-        ctx.shadowColor = '#f43f5e';
-        ctx.shadowBlur = e.flash > 0 ? 8 : 3;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        if (e.isBoss) {
+          // Boss 霸體外殼
+          ctx.fillStyle = e.flash > 0 ? '#fff' : '#881337';
+          ctx.strokeStyle = '#f43f5e';
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = '#f43f5e';
+          ctx.shadowBlur = e.flash > 0 ? 16 : 8;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-        if (e.hp < e.maxHp) {
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.fillRect(e.x - 9, e.y - 13, 18, 3);
+          // Boss 內部核心晶片
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 7, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Boss 正面 160 度「高能能量護盾」渲染 (防禦正面攻擊)
+          if (e.hasShield) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.facingAngle);
+            ctx.beginPath();
+            ctx.arc(0, 0, e.radius + 9, -Math.PI * 0.45, Math.PI * 0.45);
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+            ctx.lineWidth = 3.5;
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 12;
+            ctx.stroke();
+
+            // 護盾弧形光幕層
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+            ctx.lineTo(0, 0);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // Boss 頂部血條與標籤
+          const barW = 44;
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillRect(e.x - barW / 2, e.y - 32, barW, 5);
           ctx.fillStyle = '#ef4444';
-          ctx.fillRect(e.x - 9, e.y - 13, (e.hp / e.maxHp) * 18, 3);
+          ctx.fillRect(e.x - barW / 2, e.y - 32, (e.hp / e.maxHp) * barW, 5);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(e.x - barW / 2, e.y - 32, barW, 5);
+
+          ctx.font = 'bold 9px monospace';
+          ctx.fillStyle = '#38bdf8';
+          ctx.textAlign = 'center';
+          ctx.fillText('TITAN BOSS', e.x, e.y - 36);
+        } else {
+          // 普通怪物
+          ctx.fillStyle = e.flash > 0 ? '#fff' : '#f43f5e';
+          ctx.strokeStyle = '#9f1239';
+          ctx.lineWidth = 1.5;
+          ctx.shadowColor = '#f43f5e';
+          ctx.shadowBlur = e.flash > 0 ? 8 : 3;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          if (e.hp < e.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(e.x - 9, e.y - 13, 18, 3);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(e.x - 9, e.y - 13, (e.hp / e.maxHp) * 18, 3);
+          }
         }
         ctx.restore();
       }
 
-      // 4. 子彈 (2.5px)
+      // 4. 貫穿時空能量球 (自轉脈衝光球)
+      for (const orb of energyOrbs) {
+        ctx.save();
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 14;
+        // 外層引力光環
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.radius + Math.sin(frameCount * 0.25) * 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 核心高能等離子
+        const grad = ctx.createRadialGradient(orb.x, orb.y, 2, orb.x, orb.y, orb.radius);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.5, '#38bdf8');
+        grad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 5. 普通子彈 (2.5px)
       for (const b of bullets) {
         ctx.save();
         ctx.fillStyle = b.isEcho ? '#ec4899' : '#38bdf8';
