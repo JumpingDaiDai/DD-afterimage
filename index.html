@@ -485,6 +485,9 @@
         root.classList.add('is-rotated-portrait');
         root.style.width = `${winH}px`;
         root.style.height = `${winW}px`;
+        root.style.top = '0px';
+        root.style.left = '0px';
+        // 繞 (0,0) 順時針旋轉 90 度後，需將 Y 軸平移負自身的寬度 (即 winW)
         root.style.transform = `rotate(90deg) translateY(-${winW}px)`;
         
         width = canvas.width = winH;
@@ -493,8 +496,10 @@
         // 手機正常橫拿 (winW >= winH)，0 度原生滿版
         isPortraitMode = false;
         root.classList.remove('is-rotated-portrait');
-        root.style.width = '100%';
-        root.style.height = '100%';
+        root.style.width = '100vw';
+        root.style.height = '100dvh';
+        root.style.top = '0px';
+        root.style.left = '0px';
         root.style.transform = 'none';
 
         width = canvas.width = winW;
