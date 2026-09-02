@@ -12,10 +12,14 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>殘像 (Afterimage) v0.0.8</title>
+  <title>AFTERIMAGE v0.0.10</title>
+  <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800;900&family=Syne:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #070913;
+      --bg: #05020c;
       --primary: #38bdf8;
       --accent: #ec4899;
       --gold: #facc15;
@@ -387,14 +391,14 @@
       transform: scale(0.94);
       box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
     }
-    /* 首頁 (Title / Home Screen) #5 時空裂隙暗黑系 (Abyssal Void) 頂級沉浸排版 */
+    /* 首頁 (Title / Home Screen) #1 幾何共振三芒星 (Resonance Trinity) 頂級沉浸排版 */
     .home-screen {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 50% 40%, #1e1136 0%, #0d061a 50%, #05020a 100%);
+      background: radial-gradient(ellipse at 50% 45%, #130a24 0%, #080314 55%, #04020a 100%);
       backdrop-filter: blur(20px);
       z-index: 100;
       display: flex;
@@ -406,21 +410,15 @@
       transition: opacity 0.4s ease, visibility 0.4s ease;
       overflow: hidden;
     }
-    /* 背景神秘時空裂隙光芒 */
-    .home-screen::before {
-      content: "";
+    /* 首頁動態 Canvas 容器 */
+    #home-canvas {
       position: absolute;
-      width: 320px;
-      height: 320px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(168, 85, 247, 0.22), rgba(236, 72, 153, 0.08), transparent 70%);
-      filter: blur(40px);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
-      animation: voidPulse 6s ease-in-out infinite alternate;
-    }
-    @keyframes voidPulse {
-      0% { transform: scale(0.9) translate(-10px, -10px); opacity: 0.6; }
-      100% { transform: scale(1.15) translate(10px, 10px); opacity: 0.9; }
+      z-index: 1;
     }
     .home-screen.hidden {
       opacity: 0;
@@ -433,58 +431,52 @@
       top: max(env(safe-area-inset-top, 14px), 14px);
       right: max(env(safe-area-inset-right, 18px), 18px);
       font-size: 11px;
-      font-family: monospace;
-      color: #c084fc;
-      background: rgba(168, 85, 247, 0.08);
-      border: 1px solid rgba(168, 85, 247, 0.25);
+      font-family: 'Orbitron', monospace;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.28);
       border-radius: 999px;
-      padding: 3px 12px;
-      letter-spacing: 0.8px;
+      padding: 4px 14px;
+      letter-spacing: 1.5px;
       backdrop-filter: blur(8px);
-      box-shadow: 0 0 12px rgba(168, 85, 247, 0.15);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+      z-index: 3;
     }
     .home-header {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 38px;
+      margin-bottom: 34px;
       position: relative;
       z-index: 2;
     }
-    /* 「殘像」時空裂隙暗黑 Logo 設計 */
+    /* 「AFTERIMAGE」純英文字標 - Syne 900 磅漸層立體光雕 */
     .logo-container {
       position: relative;
       display: inline-block;
       margin-bottom: 12px;
     }
     .game-logo-main {
-      font-size: 62px;
+      font-family: 'Syne', sans-serif;
+      font-size: 58px;
       font-weight: 900;
       letter-spacing: 14px;
       padding-left: 14px;
-      background: linear-gradient(180deg, #ffffff 0%, #e9d5ff 40%, #c084fc 80%, #7e22ce 100%);
+      background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 40%, #38bdf8 80%, #0284c7 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 28px rgba(192, 132, 252, 0.6));
-    }
-    .game-logo-en {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 10px;
-      padding-left: 10px;
-      color: #c084fc;
-      text-transform: uppercase;
-      opacity: 0.9;
-      margin-bottom: 8px;
-      text-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
+      filter: drop-shadow(0 0 32px rgba(56, 189, 248, 0.75));
+      line-height: 1.1;
     }
     .game-subtitle {
-      font-size: 13px;
-      color: #a855f7;
-      letter-spacing: 3px;
-      font-weight: 600;
-      opacity: 0.85;
-      text-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      color: #c084fc;
+      letter-spacing: 4px;
+      font-weight: 700;
+      opacity: 0.95;
+      text-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+      text-transform: uppercase;
     }
     .home-center {
       display: flex;
@@ -493,25 +485,26 @@
       position: relative;
       z-index: 2;
     }
-    /* 深空裂隙結晶按鈕 */
+    /* 幾何共振三芒星發光 Start 按鈕 */
     .btn-start {
-      background: linear-gradient(135deg, #a855f7 0%, #7e22ce 50%, #4c1d95 100%);
-      color: #ffffff;
-      font-size: 18px;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+      color: #04020a;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
       font-weight: 900;
-      letter-spacing: 3px;
-      padding: 16px 58px;
+      letter-spacing: 4px;
+      padding: 16px 60px;
       border-radius: 999px;
-      border: 1.5px solid rgba(233, 213, 255, 0.4);
+      border: 1.5px solid #ffffff;
       cursor: pointer;
-      box-shadow: 0 0 32px rgba(168, 85, 247, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+      box-shadow: 0 0 36px rgba(56, 189, 248, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.8);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       touch-action: manipulation;
       white-space: nowrap;
     }
     .btn-start:active {
-      transform: scale(0.94);
-      box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+      transform: scale(0.95);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
     }
     .home-link-btn {
       font-size: 12px;
@@ -639,17 +632,19 @@
       </div>
     </div>
 
-    <!-- 遊戲首頁 (Title Screen) -->
+    <!-- 遊戲首頁 (Title Screen) - 幾何共振三芒星 -->
     <div id="home-screen" class="home-screen">
+      <!-- 幾何光球與殘像連線動態 Canvas -->
+      <canvas id="home-canvas"></canvas>
+
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">v0.0.9</div>
+      <div class="version-tag-corner">RELEASE v0.0.10</div>
 
       <div class="home-header">
         <div class="logo-container">
-          <h1 class="game-logo-main">殘像</h1>
+          <h1 class="game-logo-main">AFTERIMAGE</h1>
         </div>
-        <div class="game-logo-en">AFTERIMAGE</div>
-        <div class="game-subtitle">時間倒流 × 殘像協同作戰 × 共振殺陣</div>
+        <div class="game-subtitle">REWIND THE TIMELINE × ECHO SYNERGY × CONVEX RESONANCE</div>
       </div>
       <div class="home-center">
         <button id="btn-start" class="btn-start">START GAME</button>
@@ -2365,8 +2360,142 @@
       modal.classList.add('active');
     }
 
-    function loop() {
-      update();
+    // --- 首頁 Canvas 幾何共振三芒星物理渲染器 ---
+    const homeCanvas = document.getElementById('home-canvas');
+    let homeCtx = homeCanvas ? homeCanvas.getContext('2d') : null;
+    let homeTime = 0;
+    let homeParticles = Array.from({ length: 30 }, () => ({
+      x: Math.random() * (window.innerWidth || 800),
+      y: Math.random() * (window.innerHeight || 600),
+      vx: (Math.random() - 0.5) * 0.7,
+      vy: (Math.random() - 0.5) * 0.7,
+      size: Math.random() * 2.2 + 1,
+      alpha: Math.random() * 0.5 + 0.2
+    }));
+
+    function resizeHomeCanvas() {
+      if (!homeCanvas) return;
+      homeCanvas.width = window.innerWidth;
+      homeCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeHomeCanvas);
+    resizeHomeCanvas();
+
+    function renderHomeScreenCanvas() {
+      if (!homeCtx || !homeCanvas || STATE.isStarted) return;
+      const hw = homeCanvas.width;
+      const hh = homeCanvas.height;
+      homeCtx.clearRect(0, 0, hw, hh);
+      homeTime += 0.02;
+
+      const cx = hw / 2;
+      const cy = hh / 2;
+      const rx = Math.min(hw * 0.35, 340);
+      const ry = Math.min(hh * 0.28, 190);
+
+      // 本體光球與 2 個殘像座標
+      const pMain = { x: cx + Math.cos(homeTime) * rx, y: cy + Math.sin(homeTime * 1.2) * ry };
+      const pEcho1 = { x: cx + Math.cos(homeTime - 1.8) * rx, y: cy + Math.sin((homeTime - 1.8) * 1.2) * ry };
+      const pEcho2 = { x: cx + Math.cos(homeTime - 3.6) * rx, y: cy + Math.sin((homeTime - 3.6) * 1.2) * ry };
+
+      // 1. 幾何三芒星封閉能量結界面
+      homeCtx.beginPath();
+      homeCtx.moveTo(pMain.x, pMain.y);
+      homeCtx.lineTo(pEcho1.x, pEcho1.y);
+      homeCtx.lineTo(pEcho2.x, pEcho2.y);
+      homeCtx.closePath();
+      homeCtx.fillStyle = 'rgba(168, 85, 247, 0.06)';
+      homeCtx.fill();
+
+      // 2. 高能共振連線 (青藍色電射光芒)
+      homeCtx.lineWidth = 2;
+      homeCtx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+      homeCtx.shadowColor = '#38bdf8';
+      homeCtx.shadowBlur = 14;
+      homeCtx.stroke();
+      homeCtx.shadowBlur = 0;
+
+      // 3. 虛線時間回溯軌跡
+      homeCtx.beginPath();
+      homeCtx.setLineDash([4, 6]);
+      homeCtx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+      homeCtx.lineWidth = 1;
+      for (let i = 0; i <= 40; i++) {
+        const t = homeTime - (i / 40) * 3.6;
+        const tx = cx + Math.cos(t) * rx;
+        const ty = cy + Math.sin(t * 1.2) * ry;
+        if (i === 0) homeCtx.moveTo(tx, ty);
+        else homeCtx.lineTo(tx, ty);
+      }
+      homeCtx.stroke();
+      homeCtx.setLineDash([]);
+
+      // 4. 時空微粒
+      homeParticles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = hw; if (p.x > hw) p.x = 0;
+        if (p.y < 0) p.y = hh; if (p.y > hh) p.y = 0;
+        homeCtx.beginPath();
+        homeCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        homeCtx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.4})`;
+        homeCtx.fill();
+      });
+
+      // 5. 兩枚殘像光球 (Echo Orbs)
+      [pEcho1, pEcho2].forEach(echo => {
+        homeCtx.beginPath();
+        homeCtx.arc(echo.x, echo.y, 16, 0, Math.PI * 2);
+        homeCtx.fillStyle = 'rgba(168, 85, 247, 0.25)';
+        homeCtx.fill();
+
+        homeCtx.beginPath();
+        homeCtx.arc(echo.x, echo.y, 8, 0, Math.PI * 2);
+        homeCtx.fillStyle = '#a855f7';
+        homeCtx.shadowColor = '#a855f7';
+        homeCtx.shadowBlur = 16;
+        homeCtx.fill();
+        homeCtx.shadowBlur = 0;
+      });
+
+      // 6. 本體核心光球 (Main Core Orb)
+      const pulse = 22 + Math.sin(homeTime * 4) * 3;
+      homeCtx.beginPath();
+      homeCtx.arc(pMain.x, pMain.y, pulse, 0, Math.PI * 2);
+      homeCtx.fillStyle = 'rgba(56, 189, 248, 0.22)';
+      homeCtx.fill();
+
+      homeCtx.beginPath();
+      homeCtx.arc(pMain.x, pMain.y, 11, 0, Math.PI * 2);
+      homeCtx.fillStyle = '#ffffff';
+      homeCtx.shadowColor = '#38bdf8';
+      homeCtx.shadowBlur = 24;
+      homeCtx.fill();
+      homeCtx.shadowBlur = 0;
+
+      requestAnimationFrame(renderHomeScreenCanvas);
+    }
+    requestAnimationFrame(renderHomeScreenCanvas);
+
+    // --- 幀率鎖定與固定時間步長 (Fixed Timestep 60FPS 防高刷螢幕加速) ---
+    let lastTime = performance.now();
+    let accumulator = 0;
+    const TIME_STEP = 1000 / 60; // 嚴格鎖定 16.666ms 一個邏輯更新幀
+
+    function loop(currentTime) {
+      if (!currentTime) currentTime = performance.now();
+      let delta = currentTime - lastTime;
+      lastTime = currentTime;
+
+      // 避免背景切換或卡頓導致的螺旋延遲 (Spiral of Death)
+      if (delta > 250) delta = 250;
+      accumulator += delta;
+
+      // 無論螢幕是 60Hz, 90Hz, 120Hz, 144Hz，邏輯更新頻率嚴格鎖定在 60 次/秒
+      while (accumulator >= TIME_STEP) {
+        update();
+        accumulator -= TIME_STEP;
+      }
+
       render();
       requestAnimationFrame(loop);
     }
