@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.10</title>
+  <title>AFTERIMAGE v0.0.11</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -638,7 +638,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.10</div>
+      <div class="version-tag-corner">RELEASE v0.0.11</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -2056,15 +2056,23 @@
 
       ctx.clearRect(0, 0, width, height);
 
-      // 細緻背景網格 (縮小至 28px)
+      // 全域相機可視範圍縮放 (0.72x，視野範圍擴大約 1.4 倍，帶來廣闊的戰術空間與回溯走位體驗)
+      const cameraScale = 0.72;
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      ctx.scale(cameraScale, cameraScale);
+      ctx.translate(-width / 2, -height / 2);
+
+      // 細緻背景網格 (延伸至擴展視野外)
       ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
       ctx.lineWidth = 0.8;
       const gridSize = 28;
-      for (let x = 0; x < width; x += gridSize) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+      const margin = 200;
+      for (let x = -margin; x < width + margin; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, -margin); ctx.lineTo(x, height + margin); ctx.stroke();
       }
-      for (let y = 0; y < height; y += gridSize) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+      for (let y = -margin; y < height + margin; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(-margin, y); ctx.lineTo(width + margin, y); ctx.stroke();
       }
 
       // 1. 殘像結界與連線 (全面套用 Convex Hull 凸包幾何，永遠向外凸起，絕不凹陷或自交)
@@ -2346,7 +2354,8 @@
         ctx.restore();
       }
 
-      ctx.restore();
+      ctx.restore(); // 閉合相機縮放層 (cameraScale)
+      ctx.restore(); // 閉合震屏層 (shake)
     }
 
     function gameOver() {
