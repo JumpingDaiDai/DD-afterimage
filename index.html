@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.19</title>
+  <title>AFTERIMAGE v0.0.20</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -679,7 +679,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.19</div>
+      <div class="version-tag-corner">RELEASE v0.0.20</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -1764,7 +1764,7 @@
         }
       }
 
-      // 2. 主武器發射：前方開路（青藍穿甲雷射）
+      // 2. 主武器發射：前方開路（青藍穿甲雷射，永不中斷）
       player.attackCd--;
       if (player.attackCd <= 0) {
         let aimAngle = player.facingAngle;
@@ -1777,10 +1777,12 @@
           if (diff <= maxAimCone) {
             aimAngle = directAngle;
           }
-        } else if (enemies.length > 0) {
+        } else if (enemies && enemies.length > 0) {
           // 生存模式：若有敵人在前方 30 度內，100% 直接精準瞄準最近的目標
           let nearestAngle = null, minDist = Infinity;
-          for (const e of enemies) {
+          for (let i = 0; i < enemies.length; i++) {
+            const e = enemies[i];
+            if (!e || e.hp <= 0) continue;
             const enemyAngle = Math.atan2(e.y - player.y, e.x - player.x);
             const diff = Math.abs(normalizeAngle(enemyAngle - player.facingAngle));
             if (diff <= maxAimCone) {
@@ -1801,30 +1803,37 @@
         for (let i = 0; i < player.mainCount; i++) {
           const ang = aimAngle + startOffset + i * spread;
           bullets.push({
-            x: player.x, y: player.y,
-            vx: Math.cos(ang) * 10.0, vy: Math.sin(ang) * 10.0,
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(ang) * 10.0,
+            vy: Math.sin(ang) * 10.0,
             damage: player.mainDmg,
             life: 55,
             isEcho: false,
             isSub: false
           });
         }
-        AudioEngine.playLaser();
-        player.attackCd = player.attackSpeed;
+        try { AudioEngine.playLaser(); } catch (e) {}
+        player.attackCd = Math.max(1, player.attackSpeed);
       }
 
-      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子導引火箭，完全獨立冷卻與目標鎖定)
+      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子火箭，完全獨立運作)
       if (player.subCount > 0) {
         player.subAttackCd--;
         if (player.subAttackCd <= 0) {
           let target = null;
           if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
             target = phantomAI;
-          } else if (enemies.length > 0) {
+          } else if (enemies && enemies.length > 0) {
             let minDist = Infinity;
-            for (const e of enemies) {
+            for (let i = 0; i < enemies.length; i++) {
+              const e = enemies[i];
+              if (!e || e.hp <= 0) continue;
               const d = Math.hypot(e.x - player.x, e.y - player.y);
-              if (d < minDist) { minDist = d; target = e; }
+              if (d < minDist) {
+                minDist = d;
+                target = e;
+              }
             }
           }
 
@@ -1834,8 +1843,10 @@
               const angOffset = (i - (player.subCount - 1) / 2) * 0.35;
               const launchAng = baseAng + angOffset;
               bullets.push({
-                x: player.x, y: player.y,
-                vx: Math.cos(launchAng) * 7.5, vy: Math.sin(launchAng) * 7.5,
+                x: player.x,
+                y: player.y,
+                vx: Math.cos(launchAng) * 7.5,
+                vy: Math.sin(launchAng) * 7.5,
                 damage: player.subDmg,
                 life: 75,
                 isEcho: false,
@@ -1844,7 +1855,7 @@
                 turnSpeed: 0.14
               });
             }
-            player.subAttackCd = player.subAttackSpeed;
+            player.subAttackCd = Math.max(1, player.subAttackSpeed);
           } else {
             // 場上暫時無怪時，保持隨時待發狀態
             player.subAttackCd = 0;
