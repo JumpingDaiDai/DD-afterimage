@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.13</title>
+  <title>AFTERIMAGE v0.0.14</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -638,7 +638,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.13</div>
+      <div class="version-tag-corner">RELEASE v0.0.14</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -919,6 +919,34 @@
         gain.connect(this.ctx.destination);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.5);
+      },
+      playSlash() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      },
+      playDeathDefied() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(900, this.ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
       }
     };
 
@@ -978,9 +1006,16 @@
       maxHp: 100,
       attackCd: 0,
       attackSpeed: 16,
-      shootCount: 1,
       facingAngle: 0, // 玩家當前移動/前進朝向角度
       invulnerable: 0,
+      // 主武器系統 (前向開路)
+      mainCount: 1, // 主武器前向彈數
+      mainDmg: 22, // 主武器傷害
+      // 副武器系統 (自動追蹤自衛飛彈)
+      subCount: 0, // 副武器飛彈數 (預設 0，升級解鎖後發射)
+      subDmg: 16, // 副武器傷害
+      subAttackCd: 0,
+      subAttackSpeed: 24, // 副武器射擊間隔
       // 回溯充能機制 (基礎 2 次充能，點擊升級可擴充)
       echoCharges: 2,
       maxEchoCharges: 2,
@@ -993,7 +1028,13 @@
       orbitalBlade: 0,
       bladeAngle: 0,
       orbCd: 0,
-      maxOrbCd: 180 // 每 3 秒發射一顆貫穿時空能量球
+      maxOrbCd: 180, // 每 3 秒發射一顆貫穿時空能量球
+      // 新增三大技能天賦
+      phantomSlash: 0, // 量子穿梭居合斬等級
+      phaseShift: 0, // 相位虛化等級
+      speedBuffTimer: 0, // 相位虛化加速計時器
+      deathDefiance: 0, // 極限死境回溯
+      deathDefianceCd: 0 // 死境回溯冷卻
     };
 
     // 實體管理
@@ -1239,36 +1280,109 @@
       targetEcho.x = px;
       targetEcho.y = py;
 
-      player.invulnerable = 20;
+      // 基礎換位 20 幀無敵，若解鎖「相位虛化」則提升至 60 幀 (1秒) 並賦予極速移動
+      if (player.phaseShift > 0) {
+        player.invulnerable = 60;
+        player.speedBuffTimer = 120; // 2 秒極速
+        popups.push({ x: player.x, y: player.y - 14, text: 'PHASE SHIFT', life: 25, color: '#38bdf8' });
+      } else {
+        player.invulnerable = 20;
+      }
 
-      for (let i = 0; i < 12; i++) {
-        const t = Math.random();
-        particles.push({
-          x: px + (player.x - px) * t,
-          y: py + (player.y - py) * t,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2,
-          life: 18, color: '#facc15', size: 2.5
-        });
+      // 天賦一：量子穿梭居合斬 (Phantom Slash)
+      if (player.phantomSlash > 0) {
+        AudioEngine.playSlash();
+        STATE.shake = 12;
+        const slashDmg = 90 * player.phantomSlash;
+        let slashedCount = 0;
+
+        for (const e of enemies) {
+          // 判定怪物是否處於本體與殘像瞬移路徑 (px, py) -> (player.x, player.y) 兩側 28px 內
+          if (pointToSegmentDist(e.x, e.y, px, py, player.x, player.y) < e.radius + 28) {
+            e.hp -= slashDmg;
+            e.flash = 5;
+            slashedCount++;
+            popups.push({ x: e.x, y: e.y - 12, text: `SLASH ${slashDmg}`, life: 30, color: '#facc15' });
+
+            // 怪物受擊擊退
+            const angle = Math.atan2(e.y - py, e.x - px);
+            e.x += Math.cos(angle) * 16;
+            e.y += Math.sin(angle) * 16;
+          }
+        }
+
+        // 金色居合裂空光塵粒子
+        for (let i = 0; i < 28; i++) {
+          const t = Math.random();
+          const perpAng = Math.atan2(player.y - py, player.x - px) + (Math.PI / 2);
+          const offset = (Math.random() - 0.5) * 24;
+          particles.push({
+            x: px + (player.x - px) * t + Math.cos(perpAng) * offset,
+            y: py + (player.y - py) * t + Math.sin(perpAng) * offset,
+            vx: (Math.random() - 0.5) * 3,
+            vy: (Math.random() - 0.5) * 3,
+            life: 24, color: '#facc15', size: 3
+          });
+        }
+      } else {
+        for (let i = 0; i < 12; i++) {
+          const t = Math.random();
+          particles.push({
+            x: px + (player.x - px) * t,
+            y: py + (player.y - py) * t,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            life: 18, color: '#facc15', size: 2.5
+          });
+        }
       }
     }
 
     // 升級天賦與向量 SVG 圖示設計 (零外部依賴、純向量幾何繪製)
     const UPGRADES = [
       {
-        id: 'multishot',
-        title: '雙重散射',
-        desc: '主武器發射彈幕數 +1',
+        id: 'main_multishot',
+        title: '前向開路重砲',
+        desc: '【主武器】前向開路彈幕數 +1（向前扇形擴散）',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="5" cy="12" r="2.5" fill="#38bdf8" />
-          <line x1="7.5" y1="12" x2="19" y2="6" stroke="#38bdf8" />
-          <line x1="7.5" y1="12" x2="20" y2="12" stroke="#38bdf8" />
-          <line x1="7.5" y1="12" x2="19" y2="18" stroke="#38bdf8" />
-          <polygon points="19,4 22,6 19,8" fill="#38bdf8" />
-          <polygon points="20,10 23,12 20,14" fill="#38bdf8" />
-          <polygon points="19,16 22,18 19,20" fill="#38bdf8" />
+          <polygon points="5 3 19 12 5 21 5 3" fill="rgba(56, 189, 248, 0.3)" />
+          <line x1="19" y1="6" x2="22" y2="6" />
+          <line x1="19" y1="18" x2="22" y2="18" />
         </svg>`,
-        apply: () => player.shootCount++
+        apply: () => player.mainCount++
+      },
+      {
+        id: 'main_power',
+        title: '主砲高能充填',
+        desc: '【主武器】前向開路傷害 +35%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v10M8 11l4-4 4 4" stroke-width="2.5" />
+        </svg>`,
+        apply: () => player.mainDmg = Math.round(player.mainDmg * 1.35)
+      },
+      {
+        id: 'sub_unlock',
+        title: '量子尋標飛彈',
+        desc: '【副武器】解鎖 / 追蹤飛彈數 +1（自動追擊最近敵人）',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3" fill="#ec4899" />
+          <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+          <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
+        </svg>`,
+        apply: () => player.subCount++
+      },
+      {
+        id: 'sub_overload',
+        title: '飛彈射頻過載',
+        desc: '【副武器】追蹤飛彈射速 +30%，傷害 +25%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(236, 72, 153, 0.25)" />
+        </svg>`,
+        apply: () => {
+          player.subAttackSpeed = Math.max(10, Math.floor(player.subAttackSpeed * 0.7));
+          player.subDmg = Math.round(player.subDmg * 1.25);
+        }
       },
       {
         id: 'attackspeed',
@@ -1339,6 +1453,36 @@
           <rect x="3" y="9" width="18" height="6" rx="2" fill="rgba(239, 68, 68, 0.3)" />
         </svg>`,
         apply: () => player.hp = Math.min(player.maxHp, player.hp + 40)
+      },
+      {
+        id: 'phantomsplash',
+        title: '量子居合斬',
+        desc: '換位時對瞬移路徑上的所有敵人造成 90 點居合斬擊與擊退！',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="20" x2="20" y2="4" stroke="#facc15" stroke-width="3" />
+          <polyline points="14 4 20 4 20 10" />
+          <line x1="8" y1="12" x2="16" y2="20" stroke="#ec4899" stroke-dasharray="2 2" />
+        </svg>`,
+        apply: () => player.phantomSlash++
+      },
+      {
+        id: 'phaseshift',
+        title: '相位虛化',
+        desc: '換位無敵延長至 1.0 秒，並獲得 2 秒 +40% 極速移動',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(56, 189, 248, 0.25)" />
+        </svg>`,
+        apply: () => player.phaseShift++
+      },
+      {
+        id: 'deathdefiance',
+        title: '極限死境回溯',
+        desc: '受到致命傷害時自動免疫並強制回溯，恢復 50 HP 並震退敵群 (冷卻 60s)',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="rgba(236, 72, 153, 0.3)" />
+          <polyline points="12 6 12 12 15 14" stroke="#fff" />
+        </svg>`,
+        apply: () => player.deathDefiance++
       }
     ];
 
@@ -1391,6 +1535,12 @@
         player.invulnerable--;
       }
 
+      // 相位虛化極速加成計時器與死境回溯冷卻
+      if (player.speedBuffTimer > 0) player.speedBuffTimer--;
+      if (player.deathDefianceCd > 0) player.deathDefianceCd--;
+
+      const currentSpeed = player.speedBuffTimer > 0 ? player.speed * 1.4 : player.speed;
+
       // 1. 移動計算 (放手時即原地停下)
       let moveX = 0, moveY = 0;
       if (keys['w'] || keys['arrowup']) moveY -= 1;
@@ -1400,12 +1550,12 @@
 
       if (moveX !== 0 || moveY !== 0) {
         const len = Math.hypot(moveX, moveY);
-        moveX = (moveX / len) * player.speed;
-        moveY = (moveY / len) * player.speed;
+        moveX = (moveX / len) * currentSpeed;
+        moveY = (moveY / len) * currentSpeed;
         player.facingAngle = Math.atan2(moveY, moveX); // 更新前進朝向
       } else if (joyOrigin && (joyVec.x !== 0 || joyVec.y !== 0)) {
-        moveX = joyVec.x * player.speed;
-        moveY = joyVec.y * player.speed;
+        moveX = joyVec.x * currentSpeed;
+        moveY = joyVec.y * currentSpeed;
         player.facingAngle = Math.atan2(moveY, moveX); // 更新前進朝向
       }
 
@@ -1429,18 +1579,31 @@
         }
       }
 
-      // 2. 方案 A 雙軌射擊：前向開路主砲 (Forward Buster) + 自動索敵副砲
+      // 2. 主武器發射：固定精確朝向 player.facingAngle 前方開路
       player.attackCd--;
       if (player.attackCd <= 0) {
-        // 第一發固定為「正前進方向開路主砲」
-        bullets.push({
-          x: player.x, y: player.y,
-          vx: Math.cos(player.facingAngle) * 9.5, vy: Math.sin(player.facingAngle) * 9.5,
-          damage: 20, life: 55, isEcho: false
-        });
+        const spread = 0.14;
+        const startOffset = -(player.mainCount - 1) * spread / 2;
+        for (let i = 0; i < player.mainCount; i++) {
+          const ang = player.facingAngle + startOffset + i * spread;
+          bullets.push({
+            x: player.x, y: player.y,
+            vx: Math.cos(ang) * 10.0, vy: Math.sin(ang) * 10.0,
+            damage: player.mainDmg,
+            life: 55,
+            isEcho: false,
+            isSub: false // 主武器開路子彈
+          });
+        }
+        AudioEngine.playLaser();
+        player.attackCd = player.attackSpeed;
+      }
 
-        // 若彈數 > 1，額外彈幕鎖定身邊最近敵人進行周圍自衛
-        if (player.shootCount > 1 && enemies.length > 0) {
+      // 2.5 副武器發射：自動尋標量子飛彈 (若 subCount > 0 且場上有敵人)
+      if (player.subCount > 0) {
+        player.subAttackCd--;
+        if (player.subAttackCd <= 0 && enemies.length > 0) {
+          // 尋找最近的敵人作為初始導引目標
           let nearest = null, minDist = Infinity;
           for (const e of enemies) {
             const d = Math.hypot(e.x - player.x, e.y - player.y);
@@ -1448,18 +1611,22 @@
           }
           if (nearest) {
             const baseAng = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-            const extraShots = player.shootCount - 1;
-            const spread = 0.16;
-            const startOffset = -(extraShots - 1) * spread / 2;
-            for (let i = 0; i < extraShots; i++) {
-              const ang = baseAng + startOffset + i * spread;
+            for (let i = 0; i < player.subCount; i++) {
+              const angOffset = (i - (player.subCount - 1) / 2) * 0.35;
+              const launchAng = baseAng + angOffset;
               bullets.push({
                 x: player.x, y: player.y,
-                vx: Math.cos(ang) * 8.5, vy: Math.sin(ang) * 8.5,
-                damage: 16, life: 50, isEcho: false
+                vx: Math.cos(launchAng) * 7.5, vy: Math.sin(launchAng) * 7.5,
+                damage: player.subDmg,
+                life: 70,
+                isEcho: false,
+                isSub: true, // 副武器追蹤飛彈
+                target: nearest,
+                turnSpeed: 0.12 // 飛彈主動轉向角速度
               });
             }
           }
+          player.subAttackCd = player.subAttackSpeed;
         }
         AudioEngine.playLaser();
         player.attackCd = player.attackSpeed;
@@ -1490,7 +1657,7 @@
                 bullets.push({
                   x: ec.x, y: ec.y,
                   vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
-                  damage: 14, life: 50, isEcho: true
+                  damage: 14, life: 50, isEcho: true, isSub: false
                 });
                 ec.shootCd = 18; // 殘像獨立攻擊間隔
               }
@@ -1513,7 +1680,7 @@
               bullets.push({
                 x: ec.x, y: ec.y,
                 vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
-                damage: 14, life: 50, isEcho: true
+                damage: 14, life: 50, isEcho: true, isSub: false
               });
               ec.shootCd = 18; // 原地砲台射速
             }
@@ -1667,15 +1834,52 @@
         }
       }
 
-      // 5. 普通子彈更新 (帶有 Boss 正面護盾檢測)
+      // 5. 子彈更新 (含主武器高速穿甲、副武器主動追蹤飛彈與 Boss 護盾判定)
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
+
+        // 副武器飛彈主動尋標轉向
+        if (b.isSub) {
+          // 若目標死亡或不存在，動態重新搜尋最近目標
+          if (!b.target || b.target.hp <= 0 || !enemies.includes(b.target)) {
+            let nearest = null, minDist = Infinity;
+            for (const e of enemies) {
+              const d = Math.hypot(e.x - b.x, e.y - b.y);
+              if (d < minDist) { minDist = d; nearest = e; }
+            }
+            b.target = nearest;
+          }
+
+          if (b.target) {
+            const targetAngle = Math.atan2(b.target.y - b.y, b.target.x - b.x);
+            const currentAngle = Math.atan2(b.vy, b.vx);
+            const diff = normalizeAngle(targetAngle - currentAngle);
+            const newAngle = currentAngle + Math.sign(diff) * Math.min(Math.abs(diff), b.turnSpeed || 0.12);
+            const spd = Math.hypot(b.vx, b.vy);
+            b.vx = Math.cos(newAngle) * spd;
+            b.vy = Math.sin(newAngle) * spd;
+          }
+
+          // 副武器粉色尾跡微粒
+          if (frameCount % 2 === 0) {
+            particles.push({
+              x: b.x, y: b.y,
+              vx: (Math.random() - 0.5) * 1.5,
+              vy: (Math.random() - 0.5) * 1.5,
+              life: 10,
+              color: '#ec4899',
+              size: 1.8
+            });
+          }
+        }
+
         b.x += b.vx;
         b.y += b.vy;
         b.life--;
 
         for (const e of enemies) {
-          if (Math.hypot(e.x - b.x, e.y - b.y) < e.radius + 3) {
+          const hitRadius = b.isSub ? e.radius + 6 : e.radius + 3;
+          if (Math.hypot(e.x - b.x, e.y - b.y) < hitRadius) {
             let blocked = false;
             if (e.isBoss && e.hasShield) {
               const hitAngle = Math.atan2(b.y - e.y, b.x - e.x);
@@ -1700,7 +1904,8 @@
               e.hp -= b.damage;
               e.flash = 3;
               AudioEngine.playHit();
-              popups.push({ x: e.x, y: e.y - 8, text: b.damage, life: 20, color: b.isEcho ? '#ec4899' : '#38bdf8' });
+              const popupColor = b.isSub ? '#ec4899' : (b.isEcho ? '#a855f7' : '#38bdf8');
+              popups.push({ x: e.x, y: e.y - 8, text: b.damage, life: 20, color: popupColor });
             }
             b.life = 0;
             break;
@@ -1846,8 +2051,35 @@
             }
 
             if (player.hp <= 0) {
-              player.hp = 0;
-              gameOver();
+              // 判定天賦：極限死境回溯 (Death Defiance)
+              if (player.deathDefiance > 0 && player.deathDefianceCd <= 0) {
+                AudioEngine.playDeathDefied();
+                STATE.shake = 18;
+                player.hp = 50; // 強制回溯並拉回 50 點生命值
+                player.deathDefianceCd = 3600; // 60 秒 CD
+                player.invulnerable = 60; // 1 秒絕對無敵保護
+
+                popups.push({ x: player.x, y: player.y - 20, text: 'DEATH DEFIED!', life: 45, color: '#facc15' });
+
+                // 強制觸發一次時空回溯（若充能 > 0 扣 1，若充能為 0 則免費贈送回溯逃生）
+                if (player.echoCharges > 0) player.echoCharges--;
+                const oldState = player.history[0] || { x: width / 2, y: height / 2 };
+                player.x = oldState.x;
+                player.y = oldState.y;
+
+                // 震退周圍 120px 內的所有怪物
+                for (const em of enemies) {
+                  const dist = Math.hypot(em.x - player.x, em.y - player.y);
+                  if (dist < 120) {
+                    const pushAng = Math.atan2(em.y - player.y, em.x - player.x);
+                    em.x += Math.cos(pushAng) * 45;
+                    em.y += Math.sin(pushAng) * 45;
+                  }
+                }
+              } else {
+                player.hp = 0;
+                gameOver();
+              }
             }
           }
         }
@@ -2272,15 +2504,54 @@
         ctx.restore();
       }
 
-      // 5. 普通子彈 (2.5px)
+      // 5. 子彈渲染 (主武器：青藍穿甲光束 / 副武器：粉紫量子尋標飛彈 / 殘像：紫光彈)
       for (const b of bullets) {
         ctx.save();
-        ctx.fillStyle = b.isEcho ? '#ec4899' : '#38bdf8';
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
+        if (b.isSub) {
+          // 副武器追蹤飛彈：粉紫發光圓錐體
+          const ang = Math.atan2(b.vy, b.vx);
+          ctx.translate(b.x, b.y);
+          ctx.rotate(ang);
+          ctx.fillStyle = '#ec4899';
+          ctx.shadowColor = '#ec4899';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 5, 2.8, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(1, 0, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (b.isEcho) {
+          // 殘像子彈
+          ctx.fillStyle = '#a855f7';
+          ctx.shadowColor = '#a855f7';
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // 主武器開路子彈：青藍穿甲光錐
+          const ang = Math.atan2(b.vy, b.vx);
+          ctx.translate(b.x, b.y);
+          ctx.rotate(ang);
+          ctx.fillStyle = '#38bdf8';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.moveTo(6, 0);
+          ctx.lineTo(-4, -2.5);
+          ctx.lineTo(-2, 0);
+          ctx.lineTo(-4, 2.5);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
       }
 

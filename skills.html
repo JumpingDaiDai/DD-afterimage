@@ -299,7 +299,7 @@
 
   <div class="container">
     <header>
-      <div class="badge">SYSTEM MANUAL v0.0.13</div>
+      <div class="badge">SYSTEM MANUAL v0.0.14</div>
       <h1>AFTERIMAGE 技能與機制總表</h1>
       <p class="sub-title">喚醒過去的自己，一人成軍。全機制數據規格、主動技能、天賦分支與時空幾何運算指南。</p>
       <div class="nav-actions">
@@ -503,36 +503,115 @@
       升級天賦池 (Upgrade Talents)
     </div>
     <div class="grid">
-      <!-- 天賦 1：雙重散射 -->
+      <!-- 天賦 1：前向開路重砲 (主武器) -->
       <div class="skill-card">
         <div>
           <div class="card-top">
             <div class="card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="5" cy="12" r="2.5" fill="#38bdf8"></circle>
-                <line x1="7.5" y1="12" x2="19" y2="6" stroke="#38bdf8"></line>
-                <line x1="7.5" y1="12" x2="20" y2="12" stroke="#38bdf8"></line>
-                <line x1="7.5" y1="12" x2="19" y2="18" stroke="#38bdf8"></line>
-                <polygon points="19,4 22,6 19,8" fill="#38bdf8"></polygon>
-                <polygon points="20,10 23,12 20,14" fill="#38bdf8"></polygon>
-                <polygon points="19,16 22,18 19,20" fill="#38bdf8"></polygon>
+                <polygon points="5 3 19 12 5 21 5 3" fill="rgba(56, 189, 248, 0.3)"></polygon>
+                <line x1="19" y1="6" x2="22" y2="6"></line>
+                <line x1="19" y1="18" x2="22" y2="18"></line>
               </svg>
             </div>
             <div class="card-header-info">
               <div class="card-title-row">
-                <div class="card-title">雙重散射 (Multishot)</div>
-                <span class="card-type-badge type-passive">武器強化</span>
+                <div class="card-title">前向開路重砲</div>
+                <span class="card-type-badge type-passive">主武器專屬</span>
               </div>
-              <div class="card-subtitle">ID: multishot</div>
+              <div class="card-subtitle">ID: main_multishot</div>
             </div>
           </div>
           <div class="card-desc">
-            改造主武器發射模組。第一發固定為<strong>正前進方向開路主砲 (Forward Buster)</strong>，彈數 +1 後額外彈幕將化身為<strong>自動索敵副砲</strong>，全面兼顧前方開路與周圍防衛。
+            【主武器】強化前向離子開路砲，使每次向前射擊的<strong>穿甲彈幕數 +1</strong>（呈前方微扇形向前開路），強力碾壓正面小怪。
           </div>
         </div>
         <div class="stat-list">
-          <div class="stat-item"><span class="stat-name">開路主砲傷害</span><span class="stat-val">20 DMG (朝移動前方)</span></div>
-          <div class="stat-item"><span class="stat-name">自衛副砲傷害</span><span class="stat-val gold">16 DMG (自動鎖定最近)</span></div>
+          <div class="stat-item"><span class="stat-name">開路彈幕數量</span><span class="stat-val">+1 顆 / 階</span></div>
+          <div class="stat-item"><span class="stat-name">單發傷害</span><span class="stat-val">22 DMG (青藍穿甲光錐)</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 1.5：主砲高能充填 (主武器) -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 7v10M8 11l4-4 4 4" stroke-width="2.5"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">主砲高能充填</div>
+                <span class="card-type-badge type-passive">主武器專屬</span>
+              </div>
+              <div class="card-subtitle">ID: main_power</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            【主武器】提高主砲等離子充填功率，使前向開路主砲的所有子彈<strong>傷害提升 35%</strong>。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">前向傷害增幅</span><span class="stat-val">+35% Damage</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 1.8：量子尋標飛彈 (副武器) -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" fill="#ec4899"></circle>
+                <path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path>
+                <circle cx="12" cy="12" r="8" stroke-dasharray="3 3"></circle>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">量子尋標飛彈</div>
+                <span class="card-type-badge type-passive">副武器解鎖</span>
+              </div>
+              <div class="card-subtitle">ID: sub_unlock</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            【副武器】解鎖 / 追蹤飛彈數 <strong>+1</strong>。以獨立射速自動發射粉紫色導引飛彈，在空中靈活弧線轉向並追擊最近的敵人。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">尋標飛彈數量</span><span class="stat-val pink">+1 枚 / 階</span></div>
+          <div class="stat-item"><span class="stat-name">飛彈單發傷害</span><span class="stat-val gold">16 DMG (自動追尾)</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 1.9：飛彈射頻過載 (副武器) -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(236, 72, 153, 0.25)"></polygon>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">飛彈射頻過載</div>
+                <span class="card-type-badge type-passive">副武器專屬</span>
+              </div>
+              <div class="card-subtitle">ID: sub_overload</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            【副武器】過載尋標發射矩陣，使副武器飛彈<strong>發射間隔縮短 30%</strong>，且飛彈<strong>傷害提升 25%</strong>。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">飛彈射速提升</span><span class="stat-val pink">+30% Fire Rate</span></div>
+          <div class="stat-item"><span class="stat-name">飛彈傷害加成</span><span class="stat-val gold">+25% Damage</span></div>
         </div>
       </div>
 
@@ -708,6 +787,90 @@
         <div class="stat-list">
           <div class="stat-item"><span class="stat-name">即時治療量</span><span class="stat-val pink">+40 HP</span></div>
           <div class="stat-item"><span class="stat-name">玩家基礎血量</span><span class="stat-val">100 HP</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 8：量子居合斬 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="20" x2="20" y2="4" stroke="#facc15" stroke-width="3"></line>
+                <polyline points="14 4 20 4 20 10"></polyline>
+                <line x1="8" y1="12" x2="16" y2="20" stroke="#ec4899" stroke-dasharray="2 2"></line>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">量子居合斬 (Phantom Slash)</div>
+                <span class="card-type-badge type-passive">穿梭居合</span>
+              </div>
+              <div class="card-subtitle">ID: phantomsplash</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            換位（SWAP）瞬移瞬間，對本體與殘像瞬移路徑上的所有敵方單位施展一記全螢幕<strong>居合穿梭一閃</strong>，造成高額真實傷害與強力擊退！
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">瞬移居合傷害</span><span class="stat-val gold">90 DMG / 階</span></div>
+          <div class="stat-item"><span class="stat-name">判定判定寬度</span><span class="stat-val">路徑兩側 28 px + 擊退</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 9：相位虛化 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(56, 189, 248, 0.25)"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">相位虛化 (Phase Shift)</div>
+                <span class="card-type-badge type-passive">生存極速</span>
+              </div>
+              <div class="card-subtitle">ID: phaseshift</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            換位（SWAP）後無敵時間延長至 <strong>1.0 秒 (60 幀)</strong>，且本體獲得 <strong>2 秒 +40% 極速移動</strong>，輕鬆拉開身位或反向追擊。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">換位無敵延長</span><span class="stat-val">60 幀 (1.0 秒)</span></div>
+          <div class="stat-item"><span class="stat-name">移速爆發增幅</span><span class="stat-val gold">+40% (持續 2 秒)</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 10：極限死境回溯 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="rgba(236, 72, 153, 0.3)"></path>
+                <polyline points="12 6 12 12 15 14" stroke="#fff"></polyline>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">極限死境回溯 (Death Defiance)</div>
+                <span class="card-type-badge type-passive">救命被動</span>
+              </div>
+              <div class="card-subtitle">ID: deathdefiance</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            受到致命傷害（HP 歸零）時，自動免疫致死並<strong>強制觸發回溯逃生</strong>，瞬間將血量拉回 <strong>50 HP</strong> 並釋放時空震波震飛周遭 120px 內所有怪群！
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">救命回血量</span><span class="stat-val pink">50 HP + 1 秒無敵</span></div>
+          <div class="stat-item"><span class="stat-name">被動冷卻時間</span><span class="stat-val">60 秒 (3600 幀)</span></div>
         </div>
       </div>
     </div>
