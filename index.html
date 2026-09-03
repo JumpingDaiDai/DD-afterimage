@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.20</title>
+  <title>AFTERIMAGE v0.0.21</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -122,13 +122,33 @@
     }
     .score-text { font-size: 13px; font-weight: 800; color: var(--gold); }
     .timer-text { font-size: 11px; color: #cbd5e1; font-family: monospace; }
-    .doc-link {
-      font-size: 10px;
-      color: var(--primary);
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 2px;
-      font-weight: bold;
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      color: #7dd3fc;
+      cursor: pointer;
+      padding: 3px 6px;
+      font-size: 12px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+    .hud-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .hud-btn:active {
+      transform: scale(0.92);
+    }
+    .hud-btn.muted {
+      color: #94a3b8;
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
     }
 
     /* 方案 A 控制區：經典手遊左搖桿 + 右側人體工學扇形雙技能鍵 */
@@ -641,9 +661,10 @@
         <span id="ai-charge-badge" style="font-size: 10px; font-weight: 900; color: #facc15; font-family: 'Orbitron', monospace;">CHG 2</span>
       </div>
       <div class="hud-right">
-        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
           <div class="score-text" id="hud-score-label">KILLS <span id="kill-count">0</span></div>
-          <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
+          <button id="btn-mute" class="hud-btn" title="切換靜音" aria-label="切換靜音">🔊</button>
+          <button id="btn-fullscreen" class="hud-btn" title="全螢幕" aria-label="全螢幕">[ ]</button>
         </div>
         <div class="timer-text" id="time-display">00:00</div>
       </div>
@@ -678,8 +699,11 @@
       <!-- 幾何光球與殘像連線動態 Canvas -->
       <canvas id="home-canvas"></canvas>
 
-      <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.20</div>
+      <!-- 右上角極簡版本號標籤與靜音按鈕 -->
+      <div style="position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 18px), 18px); display: flex; align-items: center; gap: 8px; z-index: 3;">
+        <button id="btn-home-mute" class="hud-btn" style="border-radius: 999px; padding: 4px 12px; font-size: 13px; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.28);" title="切換靜音" aria-label="切換靜音">🔊 音效開</button>
+        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.21</div>
+      </div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -861,15 +885,60 @@
     // 音效合成系統 (Web Audio)
     const AudioEngine = {
       ctx: null,
+      masterGain: null,
+      enabled: (() => {
+        try {
+          const saved = localStorage.getItem('dd_afterimage_sound_enabled');
+          return saved !== null ? saved === 'true' : true;
+        } catch (e) {
+          return true;
+        }
+      })(),
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = this.enabled ? 0.35 : 0;
+            this.masterGain.connect(this.ctx.destination);
+          }
         }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      toggleMute() {
+        this.enabled = !this.enabled;
+        try {
+          localStorage.setItem('dd_afterimage_sound_enabled', String(this.enabled));
+        } catch (e) {}
+
+        if (this.ctx && this.masterGain) {
+          const now = this.ctx.currentTime;
+          this.masterGain.gain.cancelScheduledValues(now);
+          this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+          this.masterGain.gain.linearRampToValueAtTime(this.enabled ? 0.35 : 0, now + 0.05);
+        }
+        this.updateUI();
+        return this.enabled;
+      },
+      updateUI() {
+        const btnMute = document.getElementById('btn-mute');
+        const btnHomeMute = document.getElementById('btn-home-mute');
+        if (btnMute) {
+          btnMute.innerText = this.enabled ? '🔊' : '🔇';
+          btnMute.title = this.enabled ? '音效開啟 (點擊靜音)' : '音效已靜音 (點擊開啟)';
+          btnMute.classList.toggle('muted', !this.enabled);
+        }
+        if (btnHomeMute) {
+          btnHomeMute.innerText = this.enabled ? '🔊 音效開' : '🔇 靜音中';
+          btnHomeMute.title = this.enabled ? '音效開啟 (點擊靜音)' : '音效已靜音 (點擊開啟)';
+          btnHomeMute.classList.toggle('muted', !this.enabled);
+        }
       },
       playLaser() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
@@ -878,12 +947,14 @@
         gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
       playHit() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -892,12 +963,14 @@
         gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.06);
       },
       playRewind() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -906,12 +979,14 @@
         gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.25);
       },
       playSwap() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'square';
@@ -920,12 +995,14 @@
         gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.1);
       },
       playGem() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -934,12 +1011,14 @@
         gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
       playShieldBlock() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -948,12 +1027,14 @@
         gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
       playOrbLaunch() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -962,12 +1043,14 @@
         gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.15);
       },
       playOrbExplode() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
@@ -976,12 +1059,14 @@
         gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.35);
       },
       playBossSpawn() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -990,12 +1075,14 @@
         gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.5);
       },
       playSlash() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
@@ -1004,12 +1091,14 @@
         gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.2);
       },
       playDeathDefied() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -1018,7 +1107,7 @@
         gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.5);
       }
@@ -1127,10 +1216,31 @@
       if (e.code === 'Space') triggerEcho();
       if (e.key.toLowerCase() === 'q') triggerSwap();
       if (e.key.toLowerCase() === 'e') triggerLockOn();
+      if (e.key.toLowerCase() === 'm') {
+        AudioEngine.init();
+        AudioEngine.toggleMute();
+      }
     });
     window.addEventListener('keyup', e => {
       keys[e.key.toLowerCase()] = false;
     });
+
+    // 靜音按鈕事件綁定 (HUD 頂部與首頁右上角)
+    const btnMute = document.getElementById('btn-mute');
+    const btnHomeMute = document.getElementById('btn-home-mute');
+    [btnMute, btnHomeMute].forEach(btn => {
+      if (!btn) return;
+      btn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        AudioEngine.toggleMute();
+      });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
+    // 初始化靜音按鈕顯示狀態
+    AudioEngine.updateUI();
 
     // --- 方案 A：左側固定搖桿控制 (嚴格使用 Touch 事件並主動 preventDefault 徹底封殺 iOS 放大鏡) ---
     const joyBase = document.getElementById('joystick-base');
