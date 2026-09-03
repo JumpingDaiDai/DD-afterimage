@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.21</title>
+  <title>AFTERIMAGE v0.0.22</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -951,6 +951,22 @@
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
+      playMissileLaunch() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.09, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      },
       playHit() {
         if (!this.enabled) return;
         this.init();
@@ -1874,37 +1890,43 @@
         }
       }
 
-      // 2. 主武器發射：前方開路（青藍穿甲雷射，永不中斷）
+      // 2. 主武器發射：前方開路（青藍穿甲雷射，具備全向智慧索敵與前方優先鎖定）
       player.attackCd--;
       if (player.attackCd <= 0) {
         let aimAngle = player.facingAngle;
-        const maxAimCone = Math.PI * (15 / 180); // 正負 15 度 (共 30 度視錐)
+        const maxAimCone = Math.PI * (30 / 180); // 優先鎖定前方 60 度視錐內的敵人
 
         if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
-          // 1v1 死鬥模式：若 AI 處於前方 30 度內，100% 直接精準瞄準 AI 核心
-          const directAngle = Math.atan2(phantomAI.y - player.y, phantomAI.x - player.x);
-          const diff = Math.abs(normalizeAngle(directAngle - player.facingAngle));
-          if (diff <= maxAimCone) {
-            aimAngle = directAngle;
-          }
+          // 1v1 死鬥模式：100% 精準鎖定 AI 核心
+          aimAngle = Math.atan2(phantomAI.y - player.y, phantomAI.x - player.x);
         } else if (enemies && enemies.length > 0) {
-          // 生存模式：若有敵人在前方 30 度內，100% 直接精準瞄準最近的目標
-          let nearestAngle = null, minDist = Infinity;
+          // 生存模式：
+          // 1. 優先尋找「前方 60 度視錐內」最近的敵人
+          let coneTargetAngle = null, coneMinDist = Infinity;
+          let nearestAnyAngle = null, nearestAnyDist = Infinity;
+
           for (let i = 0; i < enemies.length; i++) {
             const e = enemies[i];
             if (!e || e.hp <= 0) continue;
             const enemyAngle = Math.atan2(e.y - player.y, e.x - player.x);
+            const d = Math.hypot(e.x - player.x, e.y - player.y);
             const diff = Math.abs(normalizeAngle(enemyAngle - player.facingAngle));
-            if (diff <= maxAimCone) {
-              const d = Math.hypot(e.x - player.x, e.y - player.y);
-              if (d < minDist) {
-                minDist = d;
-                nearestAngle = enemyAngle;
-              }
+
+            if (diff <= maxAimCone && d < coneMinDist) {
+              coneMinDist = d;
+              coneTargetAngle = enemyAngle;
+            }
+            if (d < nearestAnyDist) {
+              nearestAnyDist = d;
+              nearestAnyAngle = enemyAngle;
             }
           }
-          if (nearestAngle !== null) {
-            aimAngle = nearestAngle;
+
+          if (coneTargetAngle !== null) {
+            aimAngle = coneTargetAngle;
+          } else if (nearestAnyAngle !== null) {
+            // 若前方無視錐內敵人，則直接鎖定全場距離玩家最近的威脅目標
+            aimAngle = nearestAnyAngle;
           }
         }
 
@@ -1927,7 +1949,7 @@
         player.attackCd = Math.max(1, player.attackSpeed);
       }
 
-      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子火箭，完全獨立運作)
+      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子火箭，完全獨立運作與專屬發射音效)
       if (player.subCount > 0) {
         player.subAttackCd--;
         if (player.subAttackCd <= 0) {
@@ -1965,6 +1987,7 @@
                 turnSpeed: 0.14
               });
             }
+            try { AudioEngine.playMissileLaunch(); } catch (e) {}
             player.subAttackCd = Math.max(1, player.subAttackSpeed);
           } else {
             // 場上暫時無怪時，保持隨時待發狀態
