@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.16</title>
+  <title>AFTERIMAGE v0.0.17</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -217,6 +217,26 @@
       left: 6px;
       background: radial-gradient(circle, #facc15, #ca8a04);
       box-shadow: 0 0 16px rgba(250, 204, 21, 0.65);
+    }
+    /* 目標鎖定：LOCK (中按鈕，位於拇指左側) */
+    .btn-lock {
+      width: 54px;
+      height: 54px;
+      bottom: 6px;
+      left: -28px;
+      background: radial-gradient(circle, #0284c7, #0369a1);
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+    }
+    .btn-lock.active {
+      background: radial-gradient(circle, #38bdf8, #0284c7);
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.95);
+      border-color: #fff !important;
+      animation: lockPulse 1.2s infinite alternate;
+    }
+    @keyframes lockPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
     }
     .btn-badge {
       position: absolute;
@@ -629,7 +649,7 @@
       </div>
     </div>
 
-    <!-- 方案 A 控制層：左搖桿 + 右側人體工學扇形雙鍵 -->
+    <!-- 方案 A 控制層：左搖桿 + 右側人體工學扇形三鍵 (SWAP, LOCK, REWIND) -->
     <div class="controls-layer">
       <div class="joystick-container">
         <div id="joystick-base">
@@ -640,6 +660,10 @@
         <button id="btn-swap" class="btn-action btn-swap disabled">
           <span class="btn-icon">SWAP</span>
           <span class="btn-lbl">換位</span>
+        </button>
+        <button id="btn-lock" class="btn-action btn-lock">
+          <span class="btn-icon">LOCK</span>
+          <span class="btn-lbl" id="lock-lbl">鎖定</span>
         </button>
         <button id="btn-echo" class="btn-action btn-echo">
           <span id="echo-badge" class="btn-badge">2</span>
@@ -655,7 +679,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.16</div>
+      <div class="version-tag-corner">RELEASE v0.0.17</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -1102,6 +1126,7 @@
       keys[e.key.toLowerCase()] = true;
       if (e.code === 'Space') triggerEcho();
       if (e.key.toLowerCase() === 'q') triggerSwap();
+      if (e.key.toLowerCase() === 'e') triggerLockOn();
     });
     window.addEventListener('keyup', e => {
       keys[e.key.toLowerCase()] = false;
@@ -1187,6 +1212,7 @@
     // --- 方案 A：右側按鈕點擊 ---
     const btnEcho = document.getElementById('btn-echo');
     const btnSwap = document.getElementById('btn-swap');
+    const btnLock = document.getElementById('btn-lock');
 
     btnEcho.addEventListener('touchstart', e => {
       e.preventDefault();
@@ -1202,6 +1228,13 @@
       triggerSwap();
     }, { passive: false });
 
+    btnLock.addEventListener('touchstart', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      AudioEngine.init();
+      triggerLockOn();
+    }, { passive: false });
+
     btnEcho.addEventListener('click', e => {
       e.preventDefault();
       triggerEcho();
@@ -1210,6 +1243,29 @@
       e.preventDefault();
       triggerSwap();
     });
+    btnLock.addEventListener('click', e => {
+      e.preventDefault();
+      triggerLockOn();
+    });
+
+    // 觸發/切換目標鎖定 (Lock-On)
+    function triggerLockOn() {
+      player.isLockOn = !player.isLockOn;
+      if (btnLock) {
+        if (player.isLockOn) {
+          btnLock.classList.add('active');
+          const lbl = document.getElementById('lock-lbl');
+          if (lbl) lbl.innerText = '鎖定中';
+          AudioEngine.playLaser();
+          popups.push({ x: player.x, y: player.y - 18, text: 'TARGET LOCKED', life: 25, color: '#38bdf8' });
+        } else {
+          btnLock.classList.remove('active');
+          const lbl = document.getElementById('lock-lbl');
+          if (lbl) lbl.innerText = '鎖定';
+          popups.push({ x: player.x, y: player.y - 18, text: 'UNLOCK', life: 20, color: '#94a3b8' });
+        }
+      }
+    }
 
     // --- 首頁 Start 按鈕事件 ---
     const btnStart = document.getElementById('btn-start');
@@ -1651,11 +1707,35 @@
         const len = Math.hypot(moveX, moveY);
         moveX = (moveX / len) * currentSpeed;
         moveY = (moveY / len) * currentSpeed;
-        player.facingAngle = Math.atan2(moveY, moveX); // 更新前進朝向
+        player.facingAngle = Math.atan2(moveY, moveX); // 預設更新為前進朝向
       } else if (joyOrigin && (joyVec.x !== 0 || joyVec.y !== 0)) {
         moveX = joyVec.x * currentSpeed;
         moveY = joyVec.y * currentSpeed;
-        player.facingAngle = Math.atan2(moveY, moveX); // 更新前進朝向
+        player.facingAngle = Math.atan2(moveY, moveX); // 預設更新為前進朝向
+      }
+
+      // 若開啟「目標鎖定 (LOCK-ON)」，強制將玩家面向角 (facingAngle) 即時死死鎖定 Boss 或 AI！
+      let lockTargetEntity = null;
+      if (player.isLockOn) {
+        if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+          lockTargetEntity = phantomAI;
+        } else if (enemies.length > 0) {
+          // 優先鎖定場上的 Boss，若無 Boss 則鎖定最近的怪物
+          let boss = enemies.find(e => e.isBoss);
+          if (boss) {
+            lockTargetEntity = boss;
+          } else {
+            let minDist = Infinity;
+            for (const e of enemies) {
+              const d = Math.hypot(e.x - player.x, e.y - player.y);
+              if (d < minDist) { minDist = d; lockTargetEntity = e; }
+            }
+          }
+        }
+
+        if (lockTargetEntity) {
+          player.facingAngle = Math.atan2(lockTargetEntity.y - player.y, lockTargetEntity.x - player.x);
+        }
       }
 
       player.x = Math.max(player.radius, Math.min(width - player.radius, player.x + moveX));
@@ -2081,25 +2161,27 @@
           }
         }
 
-        // 當偵測到即將命中、且殘像歷史完整時，100% 立即發動時空回溯閃避！
+        // 當偵測到即將命中、且殘像歷史完整時，60% 機率發動時空回溯閃避（留給玩家 40% 的命中窗口）
         if (isIncomingBulletThreat && phantomAI.echoCharges > 0 && phantomAI.history.length >= 25 && phantomAI.invulnerable <= 0) {
-          phantomAI.echoCharges--;
-          if (phantomAI.echoChargeTimer <= 0) phantomAI.echoChargeTimer = isBerserk ? 90 : 130;
-          const oldState = phantomAI.history[0];
-          phantomAI.echoes.push({
-            frames: [...phantomAI.history],
-            currentFrame: 0,
-            x: phantomAI.x,
-            y: phantomAI.y,
-            lifeTimer: 360,
-            shootCd: 0
-          });
-          phantomAI.x = oldState.x;
-          phantomAI.y = oldState.y;
-          phantomAI.invulnerable = 40; // 回溯給予 40 幀無敵保護
-          phantomAI.history = Array.from({ length: phantomAI.maxHistory }, () => ({ x: phantomAI.x, y: phantomAI.y }));
-          popups.push({ x: phantomAI.x, y: phantomAI.y - 15, text: 'PARRY REWIND', life: 28, color: '#ec4899' });
-          AudioEngine.playRewind();
+          if (Math.random() < 0.6) {
+            phantomAI.echoCharges--;
+            if (phantomAI.echoChargeTimer <= 0) phantomAI.echoChargeTimer = isBerserk ? 110 : 160;
+            const oldState = phantomAI.history[0];
+            phantomAI.echoes.push({
+              frames: [...phantomAI.history],
+              currentFrame: 0,
+              x: phantomAI.x,
+              y: phantomAI.y,
+              lifeTimer: 360,
+              shootCd: 0
+            });
+            phantomAI.x = oldState.x;
+            phantomAI.y = oldState.y;
+            phantomAI.invulnerable = 30; // 降低無敵時間至 30 幀
+            phantomAI.history = Array.from({ length: phantomAI.maxHistory }, () => ({ x: phantomAI.x, y: phantomAI.y }));
+            popups.push({ x: phantomAI.x, y: phantomAI.y - 15, text: 'PARRY REWIND', life: 25, color: '#ec4899' });
+            AudioEngine.playRewind();
+          }
         }
 
         // 2. 【智能雷射割裂戰術走位】
@@ -2134,10 +2216,9 @@
         phantomAI.history.push({ x: phantomAI.x, y: phantomAI.y });
         if (phantomAI.history.length > phantomAI.maxHistory) phantomAI.history.shift();
 
-        // 3. 【一階動態前置量預判瞄準 (Lead Aiming)】
+        // 3. 【一階動態預判瞄準 (加入擬人化 +-8 度散佈與舒適彈速 7.2px)】
         phantomAI.attackCd--;
         if (phantomAI.attackCd <= 0) {
-          // 計算玩家移動速度向量
           let pVx = 0, pVy = 0;
           if (player.history.length >= 2) {
             const pNow = player.history[player.history.length - 1];
@@ -2146,12 +2227,13 @@
             pVy = pNow.y - pPrev.y;
           }
 
-          // 子彈飛行時間 t = 距離 / 彈速 (9.5px/frame)
-          const flightTime = Math.min(25, playerDist / 9.5);
-          // 預測玩家在 flightTime 幀之後的著陸座標
-          const predX = player.x + pVx * flightTime * 1.2;
-          const predY = player.y + pVy * flightTime * 1.2;
-          const leadAng = Math.atan2(predY - phantomAI.y, predX - phantomAI.x);
+          const aiBulletSpeed = 7.2; // 調降彈速，留下走位空間
+          const flightTime = Math.min(25, playerDist / aiBulletSpeed);
+          // 預測玩家座標並加入 +-8 度的擬人微散佈
+          const predX = player.x + pVx * flightTime * 0.8;
+          const predY = player.y + pVy * flightTime * 0.8;
+          const humanJitter = (Math.random() - 0.5) * 0.28; // +-8度隨機散佈
+          const leadAng = Math.atan2(predY - phantomAI.y, predX - phantomAI.x) + humanJitter;
 
           const mainShotCount = isBerserk ? 2 : 1;
           const spread = 0.16;
@@ -2160,28 +2242,28 @@
             const ang = leadAng + startOffset + s * spread;
             bullets.push({
               x: phantomAI.x, y: phantomAI.y,
-              vx: Math.cos(ang) * 10.5, vy: Math.sin(ang) * 10.5,
-              damage: 18, life: 60, isEcho: false, isSub: false, isAI: true
+              vx: Math.cos(ang) * aiBulletSpeed, vy: Math.sin(ang) * aiBulletSpeed,
+              damage: 16, life: 65, isEcho: false, isSub: false, isAI: true
             });
           }
           AudioEngine.playLaser();
           phantomAI.attackCd = mainAttackSpeed;
         }
 
-        // 4. 【AI 副武器追蹤飛彈】
+        // 4. 【AI 副武器追蹤飛彈 (調降轉向力至 0.08，大弧線可被甩脫)】
         phantomAI.subAttackCd--;
         if (phantomAI.subAttackCd <= 0) {
-          const subCount = isBerserk ? 3 : 2;
+          const subCount = isBerserk ? 2 : 1; // 調降飛彈數量
           const baseAng = Math.atan2(player.y - phantomAI.y, player.x - phantomAI.x);
           for (let s = 0; s < subCount; s++) {
             const angOffset = (s - (subCount - 1) / 2) * 0.38;
             bullets.push({
               x: phantomAI.x, y: phantomAI.y,
-              vx: Math.cos(baseAng + angOffset) * 8.0, vy: Math.sin(baseAng + angOffset) * 8.0,
-              damage: 15, life: 80,
+              vx: Math.cos(baseAng + angOffset) * 6.5, vy: Math.sin(baseAng + angOffset) * 6.5,
+              damage: 14, life: 80,
               isEcho: false, isSub: true, isAI: true,
               target: player,
-              turnSpeed: 0.15
+              turnSpeed: 0.08 // 柔和轉向弧線
             });
           }
           phantomAI.subAttackCd = subAttackSpeed;
@@ -2989,6 +3071,54 @@
         ctx.arc(phantomAI.x, phantomAI.y, 3.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
+      }
+
+      // 5.6 繪製目標鎖定準心 (Lock-On Reticle - 幾何旋轉十字標靶)
+      if (player.isLockOn) {
+        let currentLockTarget = null;
+        if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+          currentLockTarget = phantomAI;
+        } else if (enemies.length > 0) {
+          currentLockTarget = enemies.find(e => e.isBoss) || enemies[0];
+        }
+
+        if (currentLockTarget) {
+          ctx.save();
+          ctx.translate(currentLockTarget.x, currentLockTarget.y);
+          ctx.rotate(frameCount * 0.05); // 動態科技旋轉
+
+          // 外圈幾何括號
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.8;
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 10;
+
+          const rSize = (currentLockTarget.radius || 10) + 12;
+          ctx.beginPath();
+          ctx.arc(0, 0, rSize, 0, Math.PI * 0.4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, rSize, Math.PI * 0.5, Math.PI * 0.9);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, rSize, Math.PI, Math.PI * 1.4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, rSize, Math.PI * 1.5, Math.PI * 1.9);
+          ctx.stroke();
+
+          // 核心十字線
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(-rSize - 4, 0); ctx.lineTo(-rSize + 4, 0);
+          ctx.moveTo(rSize - 4, 0); ctx.lineTo(rSize + 4, 0);
+          ctx.moveTo(0, -rSize - 4); ctx.lineTo(0, -rSize + 4);
+          ctx.moveTo(0, rSize - 4); ctx.lineTo(0, rSize + 4);
+          ctx.stroke();
+
+          ctx.restore();
+        }
       }
 
       // 5.8 軌道光刃
