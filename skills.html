@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>AFTERIMAGE - 技能與機制總表 (Skill Compendium)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070913;
+      --panel: #0d1224;
+      --card-bg: rgba(18, 24, 45, 0.75);
+      --card-border: rgba(56, 189, 248, 0.2);
+      --primary: #38bdf8;
+      --accent: #ec4899;
+      --gold: #facc15;
+      --purple: #a855f7;
+      --green: #10b981;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    /* 頂部 Header */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ffffff 30%, var(--primary) 70%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+
+    .sub-title {
+      font-size: 15px;
+      color: var(--text-dim);
+      max-width: 600px;
+      margin: 0 auto 20px;
+    }
+
+    .nav-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #070913;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    }
+    .btn-primary:hover {
+      background: #7dd3fc;
+      transform: translateY(-2px);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--primary);
+    }
+
+    /* 章節區塊 */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin: 48px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .section-title .icon-tag {
+      font-size: 14px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 800;
+    }
+    .tag-blue { background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid var(--primary); }
+    .tag-pink { background: rgba(236, 72, 153, 0.15); color: var(--accent); border: 1px solid var(--accent); }
+    .tag-gold { background: rgba(250, 204, 21, 0.15); color: var(--gold); border: 1px solid var(--gold); }
+    .tag-purple { background: rgba(168, 85, 247, 0.15); color: var(--purple); border: 1px solid var(--purple); }
+
+    /* 卡片 Grid 佈局 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    /* 技能卡片 */
+    .skill-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .skill-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+      box-shadow: 0 12px 30px rgba(56, 189, 248, 0.15);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .card-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
+    }
+    .card-icon svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .card-header-info {
+      flex: 1;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .card-type-badge {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .type-active { background: rgba(236, 72, 153, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+    .type-passive { background: rgba(56, 189, 248, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+    .type-mechanic { background: rgba(250, 204, 21, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+    .type-concept { background: rgba(168, 85, 247, 0.2); color: var(--purple); border: 1px solid var(--purple); }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'Orbitron', monospace;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      margin-bottom: 14px;
+      line-height: 1.55;
+    }
+
+    /* 參數規格列表 */
+    .stat-list {
+      background: rgba(10, 15, 30, 0.6);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: auto;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .stat-name {
+      color: var(--text-dim);
+    }
+    .stat-val {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-val.gold { color: var(--gold); }
+    .stat-val.pink { color: var(--accent); }
+    .stat-val.purple { color: var(--purple); }
+
+    footer {
+      margin-top: 60px;
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">SYSTEM MANUAL v0.0.13</div>
+      <h1>AFTERIMAGE 技能與機制總表</h1>
+      <p class="sub-title">喚醒過去的自己，一人成軍。全機制數據規格、主動技能、天賦分支與時空幾何運算指南。</p>
+      <div class="nav-actions">
+        <a href="index.html" class="btn btn-primary">進入遊戲</a>
+        <a href="manual.html" class="btn btn-secondary">操作手冊</a>
+      </div>
+    </header>
+
+    <!-- 1. 核心主動操作技能 -->
+    <div class="section-title">
+      <span class="icon-tag tag-blue">ACTIVE</span>
+      核心主動技能 (Core Active Skills)
+    </div>
+    <div class="grid">
+      <!-- 技能：時空回溯 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+                <path d="M4 4 L2 6" stroke="#38bdf8"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">時空回溯 (Rewind)</div>
+                <span class="card-type-badge type-active">主動技能</span>
+              </div>
+              <div class="card-subtitle">BUTTON / SPACE</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            消耗 1 點回溯充能，本體瞬間傳送至 <strong>3 秒前（180 幀前）</strong> 的歷史座標並召喚**「時空殘像」**。殘像將<strong>重播過去 3 秒軌跡 1 次</strong>，到達終點後<strong>原地駐留 3 秒</strong>持續射擊，回溯瞬間獲得 35 幀無敵保護。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">預設充能次數 (Charges)</span><span class="stat-val">2 次</span></div>
+          <div class="stat-item"><span class="stat-name">充能恢復時間 (CD)</span><span class="stat-val">2.5 秒 / 點</span></div>
+          <div class="stat-item"><span class="stat-name">殘像在場總時長</span><span class="stat-val gold">約 6.0 秒 (3s 回放 + 3s 原地砲台)</span></div>
+          <div class="stat-item"><span class="stat-name">回溯無敵保護</span><span class="stat-val">35 幀 (約 0.58s)</span></div>
+        </div>
+      </div>
+
+      <!-- 技能：殘像換位 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">殘像換位 (Swap)</div>
+                <span class="card-type-badge type-active">主動技能</span>
+              </div>
+              <div class="card-subtitle">BUTTON / Q KEY</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            當場上存在殘像時即可發動。本體與最新生成的一名殘像<strong>瞬間對調座標</strong>，換位瞬間觸發畫面輕微震顫並賦予 20 幀無敵時間，可用於極限閃避或切換戰場視角。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">發動條件</span><span class="stat-val pink">場上殘像數 ≥ 1</span></div>
+          <div class="stat-item"><span class="stat-name">換位冷卻 (CD)</span><span class="stat-val">無冷卻 (隨按即換)</span></div>
+          <div class="stat-item"><span class="stat-name">換位無敵保護</span><span class="stat-val">20 幀 (約 0.33s)</span></div>
+        </div>
+      </div>
+
+      <!-- 機制：3 秒預覽虛影 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="8" stroke-dasharray="3 3"></circle>
+                <circle cx="12" cy="12" r="3" fill="#38bdf8"></circle>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">時空預覽虛影 (Ghost)</div>
+                <span class="card-type-badge type-mechanic">常駐機制</span>
+              </div>
+              <div class="card-subtitle">PASSIVE HUD</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            當擁有回溯充能時，戰場上會以半透明量子呼吸微光及虛線連線，即時標註出<strong>「若現在按下回溯，你的著陸位置」</strong>，輔助玩家進行精準走位預判。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">預覽時間差</span><span class="stat-val">精確 3.0 秒前</span></div>
+          <div class="stat-item"><span class="stat-name">微光呼吸頻率</span><span class="stat-val">動態 Sin 週期</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 幾何空間與共振雷射機制 -->
+    <div class="section-title">
+      <span class="icon-tag tag-pink">GEOMETRY</span>
+      時空幾何與共振雷射 (Spatial Resonance)
+    </div>
+    <div class="grid">
+      <!-- 機制：共振雷射連線 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="12" r="3" fill="#38bdf8"></circle>
+                <circle cx="18" cy="12" r="3" fill="#ec4899"></circle>
+                <line x1="9" y1="12" x2="15" y2="12" stroke="#facc15" stroke-width="3"></line>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">共振割裂雷射 (Line)</div>
+                <span class="card-type-badge type-mechanic">幾何連線</span>
+              </div>
+              <div class="card-subtitle">1 ECHO ON FIELD</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            當場上存在 <strong>1 個殘像</strong> 時，本體與殘像之間拉出一條高能離子雷射光束。穿過或接觸到光束的敵方單位每幀皆會受到持續性高頻割裂傷害與受擊白閃。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">基礎傷害 / 幀</span><span class="stat-val pink">0.9 DMG / Frame</span></div>
+          <div class="stat-item"><span class="stat-name">等效 DPS (60fps)</span><span class="stat-val gold">54 點傷害 / 秒</span></div>
+          <div class="stat-item"><span class="stat-name">判定寬度</span><span class="stat-val">半徑 + 4 px 容錯</span></div>
+        </div>
+      </div>
+
+      <!-- 機制：多邊形湮滅結界 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12,3 2,21 22,21" fill="rgba(168,85,247,0.25)" stroke="#a855f7"></polygon>
+                <circle cx="12" cy="12" r="2" fill="#facc15"></circle>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">多維湮滅殺陣 (Polygon)</div>
+                <span class="card-type-badge type-mechanic">封閉結界</span>
+              </div>
+              <div class="card-subtitle">≥ 2 ECHOES ON FIELD</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            利用充能連續回溯召喚 <strong>2 個以上殘像</strong> 時，本體與所有殘像頂點自動閉合成「高能封閉多邊形結界」。被包圍在結界內部的一切敵人受到 1.5 倍極限高頻電蝕。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">基礎傷害 / 幀</span><span class="stat-val purple">1.35 DMG (1.5x)</span></div>
+          <div class="stat-item"><span class="stat-name">等效 DPS (60fps)</span><span class="stat-val gold">81 點傷害 / 秒</span></div>
+          <div class="stat-item"><span class="stat-name">命中額外特效</span><span class="stat-val">20% 機率噴濺金色離子</span></div>
+        </div>
+      </div>
+
+      <!-- 機制：時空能量球撞擊引爆 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="6" fill="rgba(250,204,21,0.4)" stroke="#facc15"></circle>
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">超新星大引爆 (Nova)</div>
+                <span class="card-type-badge type-mechanic">貫穿連鎖</span>
+              </div>
+              <div class="card-subtitle">COLLISION TRIGGER</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            本體每 3 秒自動朝前進方向發射一顆貫穿能量球。當玩家<strong>按下「回溯 (Rewind)」瞬間</strong>，場上所有能量球立即超載共振，在敵群中引發半徑 160px 的<strong>時空超新星全屏毀滅大爆炸</strong>（亦可肉身/殘像碰撞引爆）！
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">能量球冷卻</span><span class="stat-val">3.0 秒 (朝前進方向)</span></div>
+          <div class="stat-item"><span class="stat-name">引爆觸發方式</span><span class="stat-val gold">回溯共振 / 肉身撞擊</span></div>
+          <div class="stat-item"><span class="stat-name">超新星爆炸傷害</span><span class="stat-val pink">120 DMG (160px 範圍)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ROGUELIKE 升級天賦庫 -->
+    <div class="section-title">
+      <span class="icon-tag tag-gold">ROGUELIKE</span>
+      升級天賦池 (Upgrade Talents)
+    </div>
+    <div class="grid">
+      <!-- 天賦 1：雙重散射 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="5" cy="12" r="2.5" fill="#38bdf8"></circle>
+                <line x1="7.5" y1="12" x2="19" y2="6" stroke="#38bdf8"></line>
+                <line x1="7.5" y1="12" x2="20" y2="12" stroke="#38bdf8"></line>
+                <line x1="7.5" y1="12" x2="19" y2="18" stroke="#38bdf8"></line>
+                <polygon points="19,4 22,6 19,8" fill="#38bdf8"></polygon>
+                <polygon points="20,10 23,12 20,14" fill="#38bdf8"></polygon>
+                <polygon points="19,16 22,18 19,20" fill="#38bdf8"></polygon>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">雙重散射 (Multishot)</div>
+                <span class="card-type-badge type-passive">武器強化</span>
+              </div>
+              <div class="card-subtitle">ID: multishot</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            改造主武器發射模組。第一發固定為<strong>正前進方向開路主砲 (Forward Buster)</strong>，彈數 +1 後額外彈幕將化身為<strong>自動索敵副砲</strong>，全面兼顧前方開路與周圍防衛。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">開路主砲傷害</span><span class="stat-val">20 DMG (朝移動前方)</span></div>
+          <div class="stat-item"><span class="stat-name">自衛副砲傷害</span><span class="stat-val gold">16 DMG (自動鎖定最近)</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 2：超頻加速 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(250, 204, 21, 0.25)"></polygon>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">超頻加速 (Hyperclock)</div>
+                <span class="card-type-badge type-passive">射速強化</span>
+              </div>
+              <div class="card-subtitle">ID: attackspeed</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            超頻能量核心晶片，使主武器與殘像的射擊間隔<strong>縮短 25%</strong>。攻速疊加後可形成綿密如雨的連續離子彈幕。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">射擊間隔縮減</span><span class="stat-val gold">-25% Attack Delay</span></div>
+          <div class="stat-item"><span class="stat-name">攻擊冷卻下限</span><span class="stat-val">7 幀 (極限極速)</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 3：共振光刃 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" fill="rgba(236, 72, 153, 0.2)"></polygon>
+                <line x1="2" y1="12" x2="22" y2="12" stroke="#ec4899" stroke-dasharray="2 2"></line>
+                <circle cx="12" cy="12" r="3" fill="#ec4899"></circle>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">共振光刃 (Resonance)</div>
+                <span class="card-type-badge type-passive">幾何強化</span>
+              </div>
+              <div class="card-subtitle">ID: resonance</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            強化雷射能量通道，使本體與殘像之間的<strong>連線雷射切割</strong>與<strong>多維湮滅殺陣結界</strong>每幀傷害 <strong>+50%</strong>。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">共振傷害增幅</span><span class="stat-val pink">+0.5 / 幀 (+50%)</span></div>
+          <div class="stat-item"><span class="stat-name">影響範圍</span><span class="stat-val">割裂線、三角形、多邊形結界</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 4：多重鏡像 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="5" r="3" fill="rgba(168, 85, 247, 0.4)"></circle>
+                <circle cx="5" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)"></circle>
+                <circle cx="19" cy="18" r="3" fill="rgba(168, 85, 247, 0.4)"></circle>
+                <polygon points="12,5 5,18 19,18" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="3 2"></polygon>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">多重鏡像 (Multi-Echo)</div>
+                <span class="card-type-badge type-passive">核心質變</span>
+              </div>
+              <div class="card-subtitle">ID: multiecho</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            打破時空維度限制，使場上<strong>殘像最大上限 +1</strong>，並同時使<strong>回溯充能次數上限 +1</strong>（直接贈送 1 點充能），解鎖多重封閉湮滅殺陣！
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">殘像上限加成</span><span class="stat-val purple">+1 同時在場</span></div>
+          <div class="stat-item"><span class="stat-name">充能上限加成</span><span class="stat-val purple">+1 充能槽</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 5：軌道切割刃 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="8" stroke-dasharray="3 3"></circle>
+                <circle cx="12" cy="12" r="3" fill="#38bdf8"></circle>
+                <circle cx="12" cy="4" r="2.5" fill="#facc15"></circle>
+                <circle cx="12" cy="20" r="2.5" fill="#facc15"></circle>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">軌道切割刃 (Orbital)</div>
+                <span class="card-type-badge type-passive">近身護盾</span>
+              </div>
+              <div class="card-subtitle">ID: orbital</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            在玩家本體身邊生成一枚高速旋轉的量子防護光刃（環繞半徑 40px），對任何接近本體的敵方單位造成持續性近身接觸切割傷害。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">光刃數量</span><span class="stat-val gold">+1 枚 / 階</span></div>
+          <div class="stat-item"><span class="stat-name">每幀接觸傷害</span><span class="stat-val">1.2 DMG / Frame</span></div>
+          <div class="stat-item"><span class="stat-name">環繞半徑</span><span class="stat-val">40 px</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 6：時空壓縮 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+                <path d="M4 4 L2 6" stroke="#38bdf8"></path>
+                <path d="M20 4 L22 6" stroke="#38bdf8"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">時空壓縮 (Compression)</div>
+                <span class="card-type-badge type-passive">冷卻縮減</span>
+              </div>
+              <div class="card-subtitle">ID: cooldown</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            提高時間粒子汲取速率，使回溯充能的恢復時間<strong>縮短 30%</strong>，讓你可以更頻繁地發動回溯走位、結界合圍與換位戰術。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">回溯冷卻縮減</span><span class="stat-val">-30% Charge Time</span></div>
+          <div class="stat-item"><span class="stat-name">充能冷卻下限</span><span class="stat-val">1.0 秒 (60 幀)</span></div>
+        </div>
+      </div>
+
+      <!-- 天賦 7：奈米修復 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="3" width="6" height="18" rx="2" fill="rgba(239, 68, 68, 0.3)"></rect>
+                <rect x="3" y="9" width="18" height="6" rx="2" fill="rgba(239, 68, 68, 0.3)"></rect>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">奈米修復 (Nano Repair)</div>
+                <span class="card-type-badge type-passive">緊急治療</span>
+              </div>
+              <div class="card-subtitle">ID: heal</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            釋放緊急醫療奈米機械群，選取時立即為本體恢復 <strong>40 點生命值</strong>（不超過生命上限），關鍵時刻維持戰鬥續航力。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">即時治療量</span><span class="stat-val pink">+40 HP</span></div>
+          <div class="stat-item"><span class="stat-name">玩家基礎血量</span><span class="stat-val">100 HP</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 戰略藍圖：未來機制提案庫 -->
+    <div class="section-title">
+      <span class="icon-tag tag-purple">PROPOSALS</span>
+      未來機制提案庫 (Roadmap Concepts)
+    </div>
+    <div class="grid">
+      <!-- 概念 1：結界重力坍縮 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a10 10 0 0 0-10 10"></path>
+                <circle cx="12" cy="12" r="3" fill="#a855f7"></circle>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">時空結界坍縮 (Implosion)</div>
+                <span class="card-type-badge type-concept">玩法提案</span>
+              </div>
+              <div class="card-subtitle">DIMENSIONAL GRAVITY</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            多邊形封閉結界形成持續 1.5 秒後自動觸發黑洞超重力坍縮，將結界內的所有敵方單位向結界中心強力吸附聚集，並造成巨額百分比爆破傷害。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">機制特色</span><span class="stat-val purple">強力聚怪 + 範圍百分比爆破</span></div>
+        </div>
+      </div>
+
+      <!-- 概念 2：稜鏡折射雷射 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="6,4 18,12 6,20" stroke="#38bdf8"></polygon>
+                <line x1="2" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="22" y2="8"></line>
+                <line x1="18" y1="12" x2="22" y2="16"></line>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">光學稜鏡折射 (Prism)</div>
+                <span class="card-type-badge type-concept">玩法提案</span>
+              </div>
+              <div class="card-subtitle">BEAM REFRACTION</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            本體發射的普通子彈穿過「殘像雷射連線」時會被折射分裂為 3 發增幅散彈；射入「封閉結界」時更會在結界內部邊界反射反彈 3 次。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">機制特色</span><span class="stat-val">彈幕分裂 + 結界反射彈</span></div>
+        </div>
+      </div>
+
+      <!-- 概念 3：時空軌跡雷區 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15"></line>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">時空軌跡雷區 (Minefield)</div>
+                <span class="card-type-badge type-concept">玩法提案</span>
+              </div>
+              <div class="card-subtitle">CHRONO DETONATION</div>
+            </div>
+          </div>
+          <div class="card-desc">
+            玩家移動時沿途留下的時間粒子在按下「回溯」瞬間被點燃，沿著過去 3 秒的移動軌跡如導火線般依序連環引爆，將追擊在身後的敵群一舉殲滅。
+          </div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">機制特色</span><span class="stat-val gold">軌跡引爆 + 牽引誘敵殲滅</span></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>AFTERIMAGE ENGINE • 零外部依賴純向量幾何繪製 • 2026</p>
+    </footer>
+  </div>
+
+</body>
+</html>
