@@ -119,10 +119,13 @@
 <body>
   <div class="container">
     <header>
-      <div class="badge">RELEASE v0.0.8</div>
+      <div class="badge">RELEASE v0.0.13</div>
       <h1>殘像 (Afterimage)</h1>
       <p>「別獨自對抗時間的洪流，喚醒過去的自己，一人成軍！」</p>
-      <a href="index.html" class="back-btn">進入遊戲</a>
+      <div style="display: flex; justify-content: center; gap: 12px; margin-top: 10px;">
+        <a href="index.html" class="back-btn">進入遊戲</a>
+        <a href="skills.html" class="back-btn" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;">技能與機制總表</a>
+      </div>
     </header>
 
     <!-- 1. 遊戲簡介與核心機制 -->
@@ -131,7 +134,7 @@
       <p>系統每幀會紀錄你過去 3 秒的走位與射擊軌跡：</p>
       <ul>
         <li><strong>回溯充能機制 (Charges)</strong>：基礎擁有 2 次回溯充能，只要有充能點數即可**無縫連續回溯**！</li>
-        <li><strong>8 秒超長駐留 × 循環重播</strong>：殘像生成後會在場上駐留 8 秒並循環重播過去的走位與射擊。</li>
+        <li><strong>兩階段生命週期 (約 6.0 秒)</strong>：殘像生成後重播過去 3 秒軌跡 1 次，抵達終點後原地駐留 3 秒轉為固定砲台射擊。</li>
         <li><strong>共振雷射 / 三角多維結界</strong>：
           <ul>
             <li>場上 1 個殘像：本體與殘像拉出直達雷射連線，割裂路徑上的敵人。</li>

@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.12</title>
+  <title>AFTERIMAGE v0.0.13</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -638,7 +638,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.12</div>
+      <div class="version-tag-corner">RELEASE v0.0.13</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -646,8 +646,12 @@
         </div>
         <div class="game-subtitle">REWIND THE TIMELINE × ECHO SYNERGY × CONVEX RESONANCE</div>
       </div>
-      <div class="home-center">
+      <div class="home-center" style="display: flex; flex-direction: column; gap: 14px; align-items: center;">
         <button id="btn-start" class="btn-start">START GAME</button>
+        <div style="display: flex; gap: 10px; z-index: 5;">
+          <a href="manual.html" class="home-link-btn">操作手冊</a>
+          <a href="skills.html" class="home-link-btn" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">技能與機制總表</a>
+        </div>
       </div>
     </div>
 
@@ -975,6 +979,7 @@
       attackCd: 0,
       attackSpeed: 16,
       shootCount: 1,
+      facingAngle: 0, // 玩家當前移動/前進朝向角度
       invulnerable: 0,
       // 回溯充能機制 (基礎 2 次充能，點擊升級可擴充)
       echoCharges: 2,
@@ -1191,7 +1196,21 @@
       player.x = oldState.x;
       player.y = oldState.y;
       player.invulnerable = 35;
-      player.history = []; // 清空重記
+      // 以著陸點填滿歷史軌跡，使 3 秒前預覽虛影能即時平滑跟隨移動，不被鎖定在原地
+      player.history = Array.from({ length: player.maxHistory }, () => ({
+        x: player.x,
+        y: player.y,
+        shooting: false
+      }));
+
+      // 時空回溯共振：引爆場上所有正在飛行的貫穿能量球 (SUPER NOVA)
+      if (energyOrbs.length > 0) {
+        for (let i = energyOrbs.length - 1; i >= 0; i--) {
+          const orb = energyOrbs[i];
+          triggerOrbSuperExplosion(orb.x, orb.y);
+        }
+        energyOrbs.length = 0; // 清空能量球
+      }
 
       for (let i = 0; i < 16; i++) {
         const ang = Math.random() * Math.PI * 2;
@@ -1383,9 +1402,11 @@
         const len = Math.hypot(moveX, moveY);
         moveX = (moveX / len) * player.speed;
         moveY = (moveY / len) * player.speed;
-      } else if (joyOrigin) {
+        player.facingAngle = Math.atan2(moveY, moveX); // 更新前進朝向
+      } else if (joyOrigin && (joyVec.x !== 0 || joyVec.y !== 0)) {
         moveX = joyVec.x * player.speed;
         moveY = joyVec.y * player.speed;
+        player.facingAngle = Math.atan2(moveY, moveX); // 更新前進朝向
       }
 
       player.x = Math.max(player.radius, Math.min(width - player.radius, player.x + moveX));
@@ -1408,29 +1429,40 @@
         }
       }
 
-      // 2. 自動射擊
+      // 2. 方案 A 雙軌射擊：前向開路主砲 (Forward Buster) + 自動索敵副砲
       player.attackCd--;
-      if (player.attackCd <= 0 && enemies.length > 0) {
-        let nearest = null, minDist = Infinity;
-        for (const e of enemies) {
-          const d = Math.hypot(e.x - player.x, e.y - player.y);
-          if (d < minDist) { minDist = d; nearest = e; }
-        }
-        if (nearest) {
-          const baseAng = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-          const spread = 0.14;
-          const startOffset = -(player.shootCount - 1) * spread / 2;
-          for (let i = 0; i < player.shootCount; i++) {
-            const ang = baseAng + startOffset + i * spread;
-            bullets.push({
-              x: player.x, y: player.y,
-              vx: Math.cos(ang) * 8.5, vy: Math.sin(ang) * 8.5,
-              damage: 18, life: 55, isEcho: false
-            });
+      if (player.attackCd <= 0) {
+        // 第一發固定為「正前進方向開路主砲」
+        bullets.push({
+          x: player.x, y: player.y,
+          vx: Math.cos(player.facingAngle) * 9.5, vy: Math.sin(player.facingAngle) * 9.5,
+          damage: 20, life: 55, isEcho: false
+        });
+
+        // 若彈數 > 1，額外彈幕鎖定身邊最近敵人進行周圍自衛
+        if (player.shootCount > 1 && enemies.length > 0) {
+          let nearest = null, minDist = Infinity;
+          for (const e of enemies) {
+            const d = Math.hypot(e.x - player.x, e.y - player.y);
+            if (d < minDist) { minDist = d; nearest = e; }
           }
-          AudioEngine.playLaser();
-          player.attackCd = player.attackSpeed;
+          if (nearest) {
+            const baseAng = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+            const extraShots = player.shootCount - 1;
+            const spread = 0.16;
+            const startOffset = -(extraShots - 1) * spread / 2;
+            for (let i = 0; i < extraShots; i++) {
+              const ang = baseAng + startOffset + i * spread;
+              bullets.push({
+                x: player.x, y: player.y,
+                vx: Math.cos(ang) * 8.5, vy: Math.sin(ang) * 8.5,
+                damage: 16, life: 50, isEcho: false
+              });
+            }
+          }
         }
+        AudioEngine.playLaser();
+        player.attackCd = player.attackSpeed;
       }
 
       // 3. 殘像更新 (回放 1 次 ➔ 原地停留 3 秒持續攻擊 ➔ 粒子消散)
@@ -1561,15 +1593,10 @@
         }
       }
 
-      // 4. 自動發射貫穿時空能量球 (穿透敵人，若被本體/回溯殘像換位撞擊則引發超大範圍湮滅爆炸)
+      // 4. 自動發射貫穿時空能量球 (固定朝前進朝向發射，衝刺追擊撞擊引爆超新星)
       player.orbCd--;
       if (player.orbCd <= 0) {
-        let nearest = null, minDist = Infinity;
-        for (const e of enemies) {
-          const d = Math.hypot(e.x - player.x, e.y - player.y);
-          if (d < minDist) { minDist = d; nearest = e; }
-        }
-        const ang = nearest ? Math.atan2(nearest.y - player.y, nearest.x - player.x) : Math.random() * Math.PI * 2;
+        const ang = player.facingAngle;
         energyOrbs.push({
           x: player.x,
           y: player.y,
@@ -1578,7 +1605,7 @@
           radius: 12,
           damage: 24,
           life: 240, // 存活 4 秒
-          armDelay: 20 // 發射 20 幀後解鎖與本體碰撞（防止發射瞬間就自爆）
+          armDelay: 18 // 發射 18 幀後解鎖與本體碰撞（方便前進追擊撞爆）
         });
         AudioEngine.playOrbLaunch();
         player.orbCd = player.maxOrbCd;
@@ -2312,7 +2339,7 @@
         ctx.restore();
       }
 
-      // 7. 玩家本體 (半徑 10px)
+      // 7. 玩家本體 (半徑 10px) + 前進朝向指針
       ctx.save();
       if (player.invulnerable > 0 && Math.floor(frameCount / 4) % 2 === 0) {
         ctx.globalAlpha = 0.5;
@@ -2327,9 +2354,22 @@
       ctx.fill();
       ctx.stroke();
 
+      // 前進方向幾何箭頭光錐
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate(player.facingAngle);
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(player.x, player.y, 4, 0, Math.PI * 2);
+      ctx.moveTo(player.radius + 6, 0);
+      ctx.lineTo(player.radius - 2, -4);
+      ctx.lineTo(player.radius - 2, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, 3.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
