@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.18</title>
+  <title>AFTERIMAGE v0.0.19</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -679,7 +679,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.18</div>
+      <div class="version-tag-corner">RELEASE v0.0.19</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -1527,7 +1527,10 @@
           <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
           <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
         </svg>`,
-        apply: () => player.subCount++
+        apply: () => {
+          player.subCount++;
+          player.subAttackCd = 0; // 立即重置副武器 CD
+        }
       },
       {
         id: 'sub_overload',
@@ -1539,6 +1542,7 @@
         apply: () => {
           player.subAttackSpeed = Math.max(10, Math.floor(player.subAttackSpeed * 0.7));
           player.subDmg = Math.round(player.subDmg * 1.25);
+          player.subAttackCd = 0;
         }
       },
       {
@@ -1760,7 +1764,7 @@
         }
       }
 
-      // 2. 主武器發射：前方開路（自動精準瞄準玩家面向 30 度錐形範圍內的目標單位）
+      // 2. 主武器發射：前方開路（青藍穿甲雷射）
       player.attackCd--;
       if (player.attackCd <= 0) {
         let aimAngle = player.facingAngle;
@@ -1809,7 +1813,7 @@
         player.attackCd = player.attackSpeed;
       }
 
-      // 2.5 副武器發射：自動尋標量子飛彈 (在 1v1 模式中精準鎖定 phantomAI，在生存模式中鎖定最近怪物)
+      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子導引火箭，完全獨立冷卻與目標鎖定)
       if (player.subCount > 0) {
         player.subAttackCd--;
         if (player.subAttackCd <= 0) {
@@ -1833,15 +1837,18 @@
                 x: player.x, y: player.y,
                 vx: Math.cos(launchAng) * 7.5, vy: Math.sin(launchAng) * 7.5,
                 damage: player.subDmg,
-                life: 70,
+                life: 75,
                 isEcho: false,
                 isSub: true,
                 target: target,
                 turnSpeed: 0.14
               });
             }
+            player.subAttackCd = player.subAttackSpeed;
+          } else {
+            // 場上暫時無怪時，保持隨時待發狀態
+            player.subAttackCd = 0;
           }
-          player.subAttackCd = player.subAttackSpeed;
         }
       }
 
@@ -2067,18 +2074,6 @@
             const spd = Math.hypot(b.vx, b.vy);
             b.vx = Math.cos(newAngle) * spd;
             b.vy = Math.sin(newAngle) * spd;
-          }
-
-          // 副武器粉色尾跡微粒
-          if (frameCount % 2 === 0) {
-            particles.push({
-              x: b.x, y: b.y,
-              vx: (Math.random() - 0.5) * 1.5,
-              vy: (Math.random() - 0.5) * 1.5,
-              life: 10,
-              color: '#ec4899',
-              size: 1.8
-            });
           }
         }
 
@@ -2969,24 +2964,37 @@
           ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          // 主武器開路子彈：青藍穿甲光錐
+          // 主武器開路子彈：高能青藍穿甲巨型離子錐 + 白熾核心 + 尾部離子拖尾
           const ang = Math.atan2(b.vy, b.vx);
           ctx.translate(b.x, b.y);
           ctx.rotate(ang);
+
+          // 外層青藍高光等離子光環
           ctx.fillStyle = '#38bdf8';
           ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 14;
           ctx.beginPath();
-          ctx.moveTo(6, 0);
-          ctx.lineTo(-4, -2.5);
-          ctx.lineTo(-2, 0);
-          ctx.lineTo(-4, 2.5);
+          ctx.moveTo(12, 0);
+          ctx.lineTo(-8, -4.5);
+          ctx.lineTo(-4, 0);
+          ctx.lineTo(-8, 4.5);
           ctx.closePath();
           ctx.fill();
 
-          ctx.fillStyle = '#fff';
+          // 核心白熾高能穿甲光束
+          ctx.fillStyle = '#ffffff';
           ctx.beginPath();
-          ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+          ctx.moveTo(10, 0);
+          ctx.lineTo(-5, -2);
+          ctx.lineTo(-2, 0);
+          ctx.lineTo(-5, 2);
+          ctx.closePath();
+          ctx.fill();
+
+          // 尾部離子噴射流
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+          ctx.beginPath();
+          ctx.arc(-8, 0, 2, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
