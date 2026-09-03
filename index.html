@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.15</title>
+  <title>AFTERIMAGE v0.0.16</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -655,7 +655,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.15</div>
+      <div class="version-tag-corner">RELEASE v0.0.16</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -664,11 +664,9 @@
         <div class="game-subtitle">REWIND THE TIMELINE × ECHO SYNERGY × CONVEX RESONANCE</div>
       </div>
       <div class="home-center" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-        <button id="btn-start" class="btn-start" style="padding: 15px 44px; width: 100%; max-width: 320px;">SURVIVAL 生存模式</button>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 480px;">
-          <button id="btn-duel-apprentice" class="btn-start" style="font-size: 11px; padding: 10px 16px; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; box-shadow: none;">1V1 學徒 (Gen 50)</button>
-          <button id="btn-duel-assassin" class="btn-start" style="font-size: 11px; padding: 10px 16px; background: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7; box-shadow: none;">1V1 刺客 (Gen 200)</button>
-          <button id="btn-duel-chronolord" class="btn-start" style="font-size: 11px; padding: 10px 16px; background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%); box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);">1V1 時間領主 (Gen 500)</button>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+          <button id="btn-start" class="btn-start" style="padding: 15px 36px;">SURVIVAL 生存模式</button>
+          <button id="btn-duel" class="btn-start" style="padding: 15px 36px; background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #6366f1 100%); box-shadow: 0 0 36px rgba(236, 72, 153, 0.8);">1V1 鏡像對決 (AI)</button>
         </div>
         <div style="display: flex; gap: 10px; z-index: 5; margin-top: 4px;">
           <a href="manual.html" class="home-link-btn">操作手冊</a>
@@ -1215,15 +1213,13 @@
 
     // --- 首頁 Start 按鈕事件 ---
     const btnStart = document.getElementById('btn-start');
-    const btnApprentice = document.getElementById('btn-duel-apprentice');
-    const btnAssassin = document.getElementById('btn-duel-assassin');
-    const btnChronoLord = document.getElementById('btn-duel-chronolord');
+    const btnDuel = document.getElementById('btn-duel');
     const homeScreen = document.getElementById('home-screen');
     const duelHud = document.getElementById('duel-hud-center');
     const expContainer = document.getElementById('exp-container');
     let hasStarted = false;
 
-    const startGame = (mode = 'survival', difficulty = 'chronoLord', e = null) => {
+    const startGame = (mode = 'survival', e = null) => {
       if (hasStarted) return;
       hasStarted = true;
 
@@ -1235,7 +1231,6 @@
       lockLandscape();
 
       STATE.gameMode = mode;
-      currentAIDifficulty = difficulty;
       STATE.isStarted = true;
       homeScreen.style.display = 'none';
       homeScreen.classList.add('hidden');
@@ -1249,25 +1244,31 @@
         // 玩家站位偏左，AI 站位偏右
         player.x = width * 0.25;
         player.y = height * 0.5;
+        // 1v1 模式下玩家默認解鎖 2 枚自動尋標飛彈與前向主砲，大幅提升對決手感
+        player.mainCount = 2;
+        player.subCount = 2;
 
-        // 初始化 AI 時空幽靈 (Phantom AI)
+        // 初始化致命 AI 時空幽靈 (Phantom AI)
         phantomAI = {
           x: width * 0.75,
           y: height * 0.5,
           radius: 10,
-          speed: 2.8,
-          hp: 150,
-          maxHp: 150,
+          speed: 3.0,
+          hp: 180,
+          maxHp: 180,
           attackCd: 0,
-          attackSpeed: 16,
+          attackSpeed: 14,
+          subAttackCd: 0,
+          subAttackSpeed: 28,
+          subCount: 2, // AI 同步配備尋標飛彈
           facingAngle: Math.PI,
           echoCharges: 2,
           maxEchoCharges: 2,
           echoChargeTimer: 0,
-          maxEchoChargeCd: 150,
+          maxEchoChargeCd: 140,
           history: [],
           maxHistory: 180,
-          resonanceDmg: 0.9,
+          resonanceDmg: 1.1,
           invulnerable: 0,
           echoes: [] // AI 的專屬時空殘像
         };
@@ -1296,17 +1297,11 @@
     };
 
     // 綁定全事件（touchstart, pointerdown, click）確保所有裝置即點即開
-    btnStart.addEventListener('touchstart', (e) => startGame('survival', 'chronoLord', e), { passive: false });
-    btnStart.addEventListener('click', (e) => startGame('survival', 'chronoLord', e));
+    btnStart.addEventListener('touchstart', (e) => startGame('survival', e), { passive: false });
+    btnStart.addEventListener('click', (e) => startGame('survival', e));
 
-    btnApprentice.addEventListener('touchstart', (e) => startGame('duel', 'apprentice', e), { passive: false });
-    btnApprentice.addEventListener('click', (e) => startGame('duel', 'apprentice', e));
-
-    btnAssassin.addEventListener('touchstart', (e) => startGame('duel', 'assassin', e), { passive: false });
-    btnAssassin.addEventListener('click', (e) => startGame('duel', 'assassin', e));
-
-    btnChronoLord.addEventListener('touchstart', (e) => startGame('duel', 'chronoLord', e), { passive: false });
-    btnChronoLord.addEventListener('click', (e) => startGame('duel', 'chronoLord', e));
+    btnDuel.addEventListener('touchstart', (e) => startGame('duel', e), { passive: false });
+    btnDuel.addEventListener('click', (e) => startGame('duel', e));
 
     // 觸發回溯 (消耗 1 次充能，只要有充能即可無縫連放)
     function triggerEcho() {
@@ -1683,38 +1678,72 @@
         }
       }
 
-      // 2. 主武器發射：固定精確朝向 player.facingAngle 前方開路
+      // 2. 主武器發射：前方開路（自動精準瞄準玩家面向 30 度錐形範圍內的目標單位）
       player.attackCd--;
       if (player.attackCd <= 0) {
+        let aimAngle = player.facingAngle;
+        const maxAimCone = Math.PI * (15 / 180); // 正負 15 度 (共 30 度視錐)
+
+        if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+          // 1v1 死鬥模式：若 AI 處於前方 30 度內，100% 直接精準瞄準 AI 核心
+          const directAngle = Math.atan2(phantomAI.y - player.y, phantomAI.x - player.x);
+          const diff = Math.abs(normalizeAngle(directAngle - player.facingAngle));
+          if (diff <= maxAimCone) {
+            aimAngle = directAngle;
+          }
+        } else if (enemies.length > 0) {
+          // 生存模式：若有敵人在前方 30 度內，100% 直接精準瞄準最近的目標
+          let nearestAngle = null, minDist = Infinity;
+          for (const e of enemies) {
+            const enemyAngle = Math.atan2(e.y - player.y, e.x - player.x);
+            const diff = Math.abs(normalizeAngle(enemyAngle - player.facingAngle));
+            if (diff <= maxAimCone) {
+              const d = Math.hypot(e.x - player.x, e.y - player.y);
+              if (d < minDist) {
+                minDist = d;
+                nearestAngle = enemyAngle;
+              }
+            }
+          }
+          if (nearestAngle !== null) {
+            aimAngle = nearestAngle;
+          }
+        }
+
         const spread = 0.14;
         const startOffset = -(player.mainCount - 1) * spread / 2;
         for (let i = 0; i < player.mainCount; i++) {
-          const ang = player.facingAngle + startOffset + i * spread;
+          const ang = aimAngle + startOffset + i * spread;
           bullets.push({
             x: player.x, y: player.y,
             vx: Math.cos(ang) * 10.0, vy: Math.sin(ang) * 10.0,
             damage: player.mainDmg,
             life: 55,
             isEcho: false,
-            isSub: false // 主武器開路子彈
+            isSub: false
           });
         }
         AudioEngine.playLaser();
         player.attackCd = player.attackSpeed;
       }
 
-      // 2.5 副武器發射：自動尋標量子飛彈 (若 subCount > 0 且場上有敵人)
+      // 2.5 副武器發射：自動尋標量子飛彈 (在 1v1 模式中精準鎖定 phantomAI，在生存模式中鎖定最近怪物)
       if (player.subCount > 0) {
         player.subAttackCd--;
-        if (player.subAttackCd <= 0 && enemies.length > 0) {
-          // 尋找最近的敵人作為初始導引目標
-          let nearest = null, minDist = Infinity;
-          for (const e of enemies) {
-            const d = Math.hypot(e.x - player.x, e.y - player.y);
-            if (d < minDist) { minDist = d; nearest = e; }
+        if (player.subAttackCd <= 0) {
+          let target = null;
+          if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+            target = phantomAI;
+          } else if (enemies.length > 0) {
+            let minDist = Infinity;
+            for (const e of enemies) {
+              const d = Math.hypot(e.x - player.x, e.y - player.y);
+              if (d < minDist) { minDist = d; target = e; }
+            }
           }
-          if (nearest) {
-            const baseAng = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+
+          if (target) {
+            const baseAng = Math.atan2(target.y - player.y, target.x - player.x);
             for (let i = 0; i < player.subCount; i++) {
               const angOffset = (i - (player.subCount - 1) / 2) * 0.35;
               const launchAng = baseAng + angOffset;
@@ -1724,9 +1753,9 @@
                 damage: player.subDmg,
                 life: 70,
                 isEcho: false,
-                isSub: true, // 副武器追蹤飛彈
-                target: nearest,
-                turnSpeed: 0.12 // 飛彈主動轉向角速度
+                isSub: true,
+                target: target,
+                turnSpeed: 0.14
               });
             }
           }
@@ -1739,6 +1768,17 @@
         const ec = echoes[i];
         ec.shootCd--;
 
+        let lockTarget = null;
+        if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+          lockTarget = phantomAI;
+        } else if (enemies.length > 0) {
+          let minDist = Infinity;
+          for (const e of enemies) {
+            const d = Math.hypot(e.x - ec.x, e.y - ec.y);
+            if (d < minDist) { minDist = d; lockTarget = e; }
+          }
+        }
+
         if (!ec.isFinished) {
           // 階段一：正在回放歷史軌跡 (只播 1 次)
           if (ec.currentFrame < ec.frames.length) {
@@ -1747,45 +1787,30 @@
             ec.y = record.y;
             ec.currentFrame++;
 
-            // 殘像具備獨立攻擊節奏：每 18 幀自動向最近敵人開火
-            if (ec.shootCd <= 0 && enemies.length > 0) {
-              let nearest = null, minDist = Infinity;
-              for (const e of enemies) {
-                const d = Math.hypot(e.x - ec.x, e.y - ec.y);
-                if (d < minDist) { minDist = d; nearest = e; }
-              }
-              if (nearest) {
-                const ang = Math.atan2(nearest.y - ec.y, nearest.x - ec.x);
-                bullets.push({
-                  x: ec.x, y: ec.y,
-                  vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
-                  damage: 14, life: 50, isEcho: true, isSub: false
-                });
-                ec.shootCd = 18; // 殘像獨立攻擊間隔
-              }
+            // 殘像具備獨立攻擊節奏：每 18 幀自動向目標開火
+            if (ec.shootCd <= 0 && lockTarget) {
+              const ang = Math.atan2(lockTarget.y - ec.y, lockTarget.x - ec.x);
+              bullets.push({
+                x: ec.x, y: ec.y,
+                vx: Math.cos(ang) * 8.0, vy: Math.sin(ang) * 8.0,
+                damage: 14, life: 50, isEcho: true, isSub: false
+              });
+              ec.shootCd = 18;
             }
           } else {
-            // 軌跡播放完畢，進入原地停留 3 秒階段
             ec.isFinished = true;
           }
         } else {
-          // 階段二：留在結束點原地駐留 3 秒 (180 幀)，持續向最近敵人鎖定射擊
+          // 階段二：留在結束點原地駐留 3 秒 (180 幀)，持續向目標鎖定射擊
           ec.standTimer--;
-          if (ec.shootCd <= 0 && enemies.length > 0) {
-            let nearest = null, minDist = Infinity;
-            for (const e of enemies) {
-              const d = Math.hypot(e.x - ec.x, e.y - ec.y);
-              if (d < minDist) { minDist = d; nearest = e; }
-            }
-            if (nearest) {
-              const ang = Math.atan2(nearest.y - ec.y, nearest.x - ec.x);
-              bullets.push({
-                x: ec.x, y: ec.y,
-                vx: Math.cos(ang) * 7.5, vy: Math.sin(ang) * 7.5,
-                damage: 14, life: 50, isEcho: true, isSub: false
-              });
-              ec.shootCd = 18; // 原地砲台射速
-            }
+          if (ec.shootCd <= 0 && lockTarget) {
+            const ang = Math.atan2(lockTarget.y - ec.y, lockTarget.x - ec.x);
+            bullets.push({
+              x: ec.x, y: ec.y,
+              vx: Math.cos(ang) * 8.0, vy: Math.sin(ang) * 8.0,
+              damage: 14, life: 50, isEcho: true, isSub: false
+            });
+            ec.shootCd = 18;
           }
 
           if (ec.standTimer <= 0) {
@@ -2018,56 +2043,46 @@
 
       // 6. 模式邏輯分支：經典生存怪群 VS 1v1 鏡像對決 AI
       if (STATE.gameMode === 'duel' && phantomAI) {
-        // --- 1V1 PHANTOM AI 神經網絡大腦每幀決策 ---
+        // --- 大師級 PHANTOM AI 混合戰術引擎 (方案 A：前置量預判 + 極限威脅感知回溯 + 狂暴過載) ---
         if (phantomAI.invulnerable > 0) phantomAI.invulnerable--;
 
-        // AI 充能恢復
+        // AI 狂暴狀態判定 (血量 < 50% 時進入狂暴過載，攻速與移速全面飆升)
+        const isBerserk = phantomAI.hp < phantomAI.maxHp * 0.5;
+        const currentSpeed = isBerserk ? phantomAI.speed * 1.35 : phantomAI.speed;
+        const mainAttackSpeed = isBerserk ? 9 : 14;
+        const subAttackSpeed = isBerserk ? 18 : 26;
+
+        // AI 充能快速恢復
         if (phantomAI.echoCharges < phantomAI.maxEchoCharges) {
           phantomAI.echoChargeTimer--;
           if (phantomAI.echoChargeTimer <= 0) {
             phantomAI.echoCharges++;
-            if (phantomAI.echoCharges < phantomAI.maxEchoCharges) phantomAI.echoChargeTimer = phantomAI.maxEchoChargeCd;
+            if (phantomAI.echoCharges < phantomAI.maxEchoCharges) phantomAI.echoChargeTimer = isBerserk ? 90 : 130;
           }
         }
 
-        // 構造神經網絡輸入特徵 (8維)
-        const dx = (player.x - phantomAI.x) / width;
-        const dy = (player.y - phantomAI.y) / height;
-        const dist = Math.hypot(player.x - phantomAI.x, player.y - phantomAI.y) / 1000;
-        let pLaserDist = 1.0;
-        if (echoes.length > 0) {
-          pLaserDist = pointToSegmentDist(phantomAI.x, phantomAI.y, player.x, player.y, echoes[0].x, echoes[0].y) / 500;
+        // 1. 【子彈威脅感知與 100% 極限時空回溯躲避】
+        let isIncomingBulletThreat = false;
+        for (const b of bullets) {
+          if (!b.isAI) {
+            const dist = Math.hypot(phantomAI.x - b.x, phantomAI.y - b.y);
+            if (dist < 65) {
+              // 計算子彈是否朝向 AI 飛行
+              const toAI_X = phantomAI.x - b.x;
+              const toAI_Y = phantomAI.y - b.y;
+              const dot = b.vx * toAI_X + b.vy * toAI_Y;
+              if (dot > 0) {
+                isIncomingBulletThreat = true;
+                break;
+              }
+            }
+          }
         }
-        const aiInputs = [
-          dx, dy, dist,
-          Math.cos(phantomAI.facingAngle - player.facingAngle),
-          echoes.length / 2,
-          pLaserDist,
-          phantomAI.echoCharges / 2,
-          phantomAI.hp / phantomAI.maxHp
-        ];
 
-        // 執行當前所選難度之模型前向推論 (Forward Inference)
-        const selectedBrain = AI_MODELS[currentAIDifficulty] || AI_MODELS.chronoLord;
-        const aiOut = runNeuralNetwork(aiInputs, selectedBrain);
-        // aiOut[0]: moveX, aiOut[1]: moveY, aiOut[2]: triggerEcho (>0.6), aiOut[3]: triggerSwap (>0.6)
-
-        const mLen = Math.hypot(aiOut[0], aiOut[1]);
-        if (mLen > 0.15) {
-          phantomAI.x += (aiOut[0] / mLen) * phantomAI.speed;
-          phantomAI.y += (aiOut[1] / mLen) * phantomAI.speed;
-          phantomAI.facingAngle = Math.atan2(aiOut[1], aiOut[0]);
-        }
-        phantomAI.x = Math.max(phantomAI.radius, Math.min(width - phantomAI.radius, phantomAI.x));
-        phantomAI.y = Math.max(phantomAI.radius, Math.min(height - phantomAI.radius, phantomAI.y));
-
-        phantomAI.history.push({ x: phantomAI.x, y: phantomAI.y });
-        if (phantomAI.history.length > phantomAI.maxHistory) phantomAI.history.shift();
-
-        // AI 發動回溯 (Rewind)
-        if (aiOut[2] > 0.65 && phantomAI.echoCharges > 0 && phantomAI.history.length >= 15) {
+        // 當偵測到即將命中、且殘像歷史完整時，100% 立即發動時空回溯閃避！
+        if (isIncomingBulletThreat && phantomAI.echoCharges > 0 && phantomAI.history.length >= 25 && phantomAI.invulnerable <= 0) {
           phantomAI.echoCharges--;
-          if (phantomAI.echoChargeTimer <= 0) phantomAI.echoChargeTimer = phantomAI.maxEchoChargeCd;
+          if (phantomAI.echoChargeTimer <= 0) phantomAI.echoChargeTimer = isBerserk ? 90 : 130;
           const oldState = phantomAI.history[0];
           phantomAI.echoes.push({
             frames: [...phantomAI.history],
@@ -2079,51 +2094,123 @@
           });
           phantomAI.x = oldState.x;
           phantomAI.y = oldState.y;
-          phantomAI.invulnerable = 35;
+          phantomAI.invulnerable = 40; // 回溯給予 40 幀無敵保護
           phantomAI.history = Array.from({ length: phantomAI.maxHistory }, () => ({ x: phantomAI.x, y: phantomAI.y }));
-          popups.push({ x: phantomAI.x, y: phantomAI.y - 15, text: 'AI REWIND', life: 25, color: '#ec4899' });
+          popups.push({ x: phantomAI.x, y: phantomAI.y - 15, text: 'PARRY REWIND', life: 28, color: '#ec4899' });
           AudioEngine.playRewind();
         }
 
-        // AI 發動換位 (Swap)
-        if (aiOut[3] > 0.65 && phantomAI.echoes.length > 0) {
-          const targetEcho = phantomAI.echoes[phantomAI.echoes.length - 1];
-          const px = phantomAI.x;
-          const py = phantomAI.y;
-          phantomAI.x = targetEcho.x;
-          phantomAI.y = targetEcho.y;
-          targetEcho.x = px;
-          targetEcho.y = py;
-          phantomAI.invulnerable = 20;
-          popups.push({ x: phantomAI.x, y: phantomAI.y - 15, text: 'AI SWAP', life: 25, color: '#facc15' });
-          AudioEngine.playSwap();
+        // 2. 【智能雷射割裂戰術走位】
+        const directToPlayer = Math.atan2(player.y - phantomAI.y, player.x - phantomAI.x);
+        const playerDist = Math.hypot(player.x - phantomAI.x, player.y - phantomAI.y);
+        
+        let desiredAngle = directToPlayer;
+        if (phantomAI.echoes.length > 0) {
+          // 場上有殘像時：AI 故意向垂直切線方向衝刺，逼迫紅色雷射線切過玩家！
+          const echo = phantomAI.echoes[0];
+          const midX = (echo.x + phantomAI.x) / 2;
+          const midY = (echo.y + phantomAI.y) / 2;
+          const toMidAng = Math.atan2(player.y - midY, player.x - midX);
+          desiredAngle = toMidAng + Math.PI * 0.5;
+        } else if (playerDist < 160) {
+          // 太近拉開距離
+          desiredAngle = directToPlayer + Math.PI;
+        } else if (playerDist > 300) {
+          // 太遠主動前推逼近
+          desiredAngle = directToPlayer;
+        } else {
+          // 中距離環繞走位
+          desiredAngle = directToPlayer + Math.PI * 0.45 * (Math.sin(frameCount * 0.05) > 0 ? 1 : -1);
         }
 
-        // AI 前向開路砲開火 (紅色光錐)
+        phantomAI.facingAngle = directToPlayer;
+        phantomAI.x += Math.cos(desiredAngle) * currentSpeed;
+        phantomAI.y += Math.sin(desiredAngle) * currentSpeed;
+        phantomAI.x = Math.max(phantomAI.radius + 10, Math.min(width - phantomAI.radius - 10, phantomAI.x));
+        phantomAI.y = Math.max(phantomAI.radius + 10, Math.min(height - phantomAI.radius - 10, phantomAI.y));
+
+        phantomAI.history.push({ x: phantomAI.x, y: phantomAI.y });
+        if (phantomAI.history.length > phantomAI.maxHistory) phantomAI.history.shift();
+
+        // 3. 【一階動態前置量預判瞄準 (Lead Aiming)】
         phantomAI.attackCd--;
         if (phantomAI.attackCd <= 0) {
-          bullets.push({
-            x: phantomAI.x, y: phantomAI.y,
-            vx: Math.cos(phantomAI.facingAngle) * 9.5, vy: Math.sin(phantomAI.facingAngle) * 9.5,
-            damage: 18, life: 55, isEcho: false, isSub: false, isAI: true
-          });
+          // 計算玩家移動速度向量
+          let pVx = 0, pVy = 0;
+          if (player.history.length >= 2) {
+            const pNow = player.history[player.history.length - 1];
+            const pPrev = player.history[player.history.length - 2];
+            pVx = pNow.x - pPrev.x;
+            pVy = pNow.y - pPrev.y;
+          }
+
+          // 子彈飛行時間 t = 距離 / 彈速 (9.5px/frame)
+          const flightTime = Math.min(25, playerDist / 9.5);
+          // 預測玩家在 flightTime 幀之後的著陸座標
+          const predX = player.x + pVx * flightTime * 1.2;
+          const predY = player.y + pVy * flightTime * 1.2;
+          const leadAng = Math.atan2(predY - phantomAI.y, predX - phantomAI.x);
+
+          const mainShotCount = isBerserk ? 2 : 1;
+          const spread = 0.16;
+          const startOffset = -(mainShotCount - 1) * spread / 2;
+          for (let s = 0; s < mainShotCount; s++) {
+            const ang = leadAng + startOffset + s * spread;
+            bullets.push({
+              x: phantomAI.x, y: phantomAI.y,
+              vx: Math.cos(ang) * 10.5, vy: Math.sin(ang) * 10.5,
+              damage: 18, life: 60, isEcho: false, isSub: false, isAI: true
+            });
+          }
           AudioEngine.playLaser();
-          phantomAI.attackCd = phantomAI.attackSpeed;
+          phantomAI.attackCd = mainAttackSpeed;
         }
 
-        // AI 殘像生命週期與雷射連線
+        // 4. 【AI 副武器追蹤飛彈】
+        phantomAI.subAttackCd--;
+        if (phantomAI.subAttackCd <= 0) {
+          const subCount = isBerserk ? 3 : 2;
+          const baseAng = Math.atan2(player.y - phantomAI.y, player.x - phantomAI.x);
+          for (let s = 0; s < subCount; s++) {
+            const angOffset = (s - (subCount - 1) / 2) * 0.38;
+            bullets.push({
+              x: phantomAI.x, y: phantomAI.y,
+              vx: Math.cos(baseAng + angOffset) * 8.0, vy: Math.sin(baseAng + angOffset) * 8.0,
+              damage: 15, life: 80,
+              isEcho: false, isSub: true, isAI: true,
+              target: player,
+              turnSpeed: 0.15
+            });
+          }
+          phantomAI.subAttackCd = subAttackSpeed;
+        }
+
+        // 5. 【AI 殘像同步射擊與雷射連線】
         for (let k = phantomAI.echoes.length - 1; k >= 0; k--) {
           const aie = phantomAI.echoes[k];
           aie.lifeTimer--;
+          aie.shootCd = (aie.shootCd || 0) - 1;
+
           if (aie.currentFrame < aie.frames.length) {
             const r = aie.frames[aie.currentFrame];
             aie.x = r.x; aie.y = r.y;
             aie.currentFrame++;
           }
+
+          if (aie.shootCd <= 0) {
+            const aieAng = Math.atan2(player.y - aie.y, player.x - aie.x);
+            bullets.push({
+              x: aie.x, y: aie.y,
+              vx: Math.cos(aieAng) * 8.5, vy: Math.sin(aieAng) * 8.5,
+              damage: 14, life: 55, isEcho: true, isSub: false, isAI: true
+            });
+            aie.shootCd = 16;
+          }
+
           if (aie.lifeTimer <= 0) phantomAI.echoes.splice(k, 1);
         }
 
-        // AI 紅色時空雷射連線割裂玩家
+        // 6. AI 紅色時空雷射連線割裂玩家
         if (phantomAI.echoes.length > 0) {
           const aie = phantomAI.echoes[0];
           if (pointToSegmentDist(player.x, player.y, phantomAI.x, phantomAI.y, aie.x, aie.y) < player.radius + 4) {
