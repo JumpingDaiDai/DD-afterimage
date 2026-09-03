@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.17</title>
+  <title>AFTERIMAGE v0.0.18</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -679,7 +679,7 @@
       <canvas id="home-canvas"></canvas>
 
       <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.17</div>
+      <div class="version-tag-corner">RELEASE v0.0.18</div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -1304,27 +1304,29 @@
         player.mainCount = 2;
         player.subCount = 2;
 
-        // 初始化致命 AI 時空幽靈 (Phantom AI)
+        // 初始化優雅對弈型 AI 時空幽靈 (Phantom AI)
+        player.hp = 150;
+        player.maxHp = 150;
         phantomAI = {
           x: width * 0.75,
           y: height * 0.5,
           radius: 10,
-          speed: 3.0,
-          hp: 180,
-          maxHp: 180,
+          speed: 2.3, // 移速調降，比玩家 (2.8) 慢，玩家可自由拉開身位
+          hp: 140,
+          maxHp: 140,
           attackCd: 0,
-          attackSpeed: 14,
+          attackSpeed: 32, // 攻擊間隔拉長至 32 幀 (約 0.53 秒一發)
           subAttackCd: 0,
-          subAttackSpeed: 28,
-          subCount: 2, // AI 同步配備尋標飛彈
+          subAttackSpeed: 75, // 飛彈間隔拉長至 75 幀 (約 1.25 秒一發)
+          subCount: 1, // 飛彈數量限制為 1 枚
           facingAngle: Math.PI,
           echoCharges: 2,
           maxEchoCharges: 2,
           echoChargeTimer: 0,
-          maxEchoChargeCd: 140,
+          maxEchoChargeCd: 180, // 3 秒恢復 1 次充能
           history: [],
           maxHistory: 180,
-          resonanceDmg: 1.1,
+          resonanceDmg: 0.6,
           invulnerable: 0,
           echoes: [] // AI 的專屬時空殘像
         };
@@ -2125,31 +2127,30 @@
 
       // 6. 模式邏輯分支：經典生存怪群 VS 1v1 鏡像對決 AI
       if (STATE.gameMode === 'duel' && phantomAI) {
-        // --- 大師級 PHANTOM AI 混合戰術引擎 (方案 A：前置量預判 + 極限威脅感知回溯 + 狂暴過載) ---
+        // --- 優雅對弈型 PHANTOM AI 戰鬥引擎 (節奏清晰、慢速彈道、無密集彈幕) ---
         if (phantomAI.invulnerable > 0) phantomAI.invulnerable--;
 
-        // AI 狂暴狀態判定 (血量 < 50% 時進入狂暴過載，攻速與移速全面飆升)
-        const isBerserk = phantomAI.hp < phantomAI.maxHp * 0.5;
-        const currentSpeed = isBerserk ? phantomAI.speed * 1.35 : phantomAI.speed;
-        const mainAttackSpeed = isBerserk ? 9 : 14;
-        const subAttackSpeed = isBerserk ? 18 : 26;
+        // AI 狂暴狀態判定 (血量 < 40% 時輕微提速，但絕不產生全屏彈幕)
+        const isBerserk = phantomAI.hp < phantomAI.maxHp * 0.4;
+        const currentSpeed = isBerserk ? phantomAI.speed * 1.15 : phantomAI.speed;
+        const mainAttackSpeed = isBerserk ? 24 : 32; // 0.4s ~ 0.53s 一發，節奏清晰
+        const subAttackSpeed = isBerserk ? 60 : 80;
 
-        // AI 充能快速恢復
+        // AI 充能平緩恢復 (3 秒一充能)
         if (phantomAI.echoCharges < phantomAI.maxEchoCharges) {
           phantomAI.echoChargeTimer--;
           if (phantomAI.echoChargeTimer <= 0) {
             phantomAI.echoCharges++;
-            if (phantomAI.echoCharges < phantomAI.maxEchoCharges) phantomAI.echoChargeTimer = isBerserk ? 90 : 130;
+            if (phantomAI.echoCharges < phantomAI.maxEchoCharges) phantomAI.echoChargeTimer = isBerserk ? 140 : 180;
           }
         }
 
-        // 1. 【子彈威脅感知與 100% 極限時空回溯躲避】
+        // 1. 【子彈威脅感知與回溯閃避】(40% 機率回溯，留給玩家 60% 擊中破綻窗口)
         let isIncomingBulletThreat = false;
         for (const b of bullets) {
           if (!b.isAI) {
             const dist = Math.hypot(phantomAI.x - b.x, phantomAI.y - b.y);
-            if (dist < 65) {
-              // 計算子彈是否朝向 AI 飛行
+            if (dist < 55) {
               const toAI_X = phantomAI.x - b.x;
               const toAI_Y = phantomAI.y - b.y;
               const dot = b.vx * toAI_X + b.vy * toAI_Y;
@@ -2161,50 +2162,42 @@
           }
         }
 
-        // 當偵測到即將命中、且殘像歷史完整時，60% 機率發動時空回溯閃避（留給玩家 40% 的命中窗口）
-        if (isIncomingBulletThreat && phantomAI.echoCharges > 0 && phantomAI.history.length >= 25 && phantomAI.invulnerable <= 0) {
-          if (Math.random() < 0.6) {
+        if (isIncomingBulletThreat && phantomAI.echoCharges > 0 && phantomAI.history.length >= 30 && phantomAI.invulnerable <= 0) {
+          if (Math.random() < 0.4) {
             phantomAI.echoCharges--;
-            if (phantomAI.echoChargeTimer <= 0) phantomAI.echoChargeTimer = isBerserk ? 110 : 160;
+            if (phantomAI.echoChargeTimer <= 0) phantomAI.echoChargeTimer = isBerserk ? 140 : 180;
             const oldState = phantomAI.history[0];
             phantomAI.echoes.push({
               frames: [...phantomAI.history],
               currentFrame: 0,
               x: phantomAI.x,
               y: phantomAI.y,
-              lifeTimer: 360,
-              shootCd: 0
+              lifeTimer: 240, // 殘像停留時間縮短至 4 秒
+              shootCd: 20
             });
             phantomAI.x = oldState.x;
             phantomAI.y = oldState.y;
-            phantomAI.invulnerable = 30; // 降低無敵時間至 30 幀
+            phantomAI.invulnerable = 20; // 降低無敵時間至 20 幀
             phantomAI.history = Array.from({ length: phantomAI.maxHistory }, () => ({ x: phantomAI.x, y: phantomAI.y }));
             popups.push({ x: phantomAI.x, y: phantomAI.y - 15, text: 'PARRY REWIND', life: 25, color: '#ec4899' });
             AudioEngine.playRewind();
           }
         }
 
-        // 2. 【智能雷射割裂戰術走位】
+        // 2. 【平穩中距離走位】
         const directToPlayer = Math.atan2(player.y - phantomAI.y, player.x - phantomAI.x);
         const playerDist = Math.hypot(player.x - phantomAI.x, player.y - phantomAI.y);
         
         let desiredAngle = directToPlayer;
-        if (phantomAI.echoes.length > 0) {
-          // 場上有殘像時：AI 故意向垂直切線方向衝刺，逼迫紅色雷射線切過玩家！
-          const echo = phantomAI.echoes[0];
-          const midX = (echo.x + phantomAI.x) / 2;
-          const midY = (echo.y + phantomAI.y) / 2;
-          const toMidAng = Math.atan2(player.y - midY, player.x - midX);
-          desiredAngle = toMidAng + Math.PI * 0.5;
-        } else if (playerDist < 160) {
-          // 太近拉開距離
+        if (playerDist < 180) {
+          // 太近拉開身位
           desiredAngle = directToPlayer + Math.PI;
-        } else if (playerDist > 300) {
-          // 太遠主動前推逼近
+        } else if (playerDist > 320) {
+          // 太遠靠近
           desiredAngle = directToPlayer;
         } else {
-          // 中距離環繞走位
-          desiredAngle = directToPlayer + Math.PI * 0.45 * (Math.sin(frameCount * 0.05) > 0 ? 1 : -1);
+          // 中距離優雅環繞走位
+          desiredAngle = directToPlayer + Math.PI * 0.4 * (Math.sin(frameCount * 0.03) > 0 ? 1 : -1);
         }
 
         phantomAI.facingAngle = directToPlayer;
@@ -2216,7 +2209,7 @@
         phantomAI.history.push({ x: phantomAI.x, y: phantomAI.y });
         if (phantomAI.history.length > phantomAI.maxHistory) phantomAI.history.shift();
 
-        // 3. 【一階動態預判瞄準 (加入擬人化 +-8 度散佈與舒適彈速 7.2px)】
+        // 3. 【一階清晰慢速單發射擊 (慢速光球 5.5px，帶有 +-12 度散佈，極易閃避)】
         phantomAI.attackCd--;
         if (phantomAI.attackCd <= 0) {
           let pVx = 0, pVy = 0;
@@ -2227,49 +2220,39 @@
             pVy = pNow.y - pPrev.y;
           }
 
-          const aiBulletSpeed = 7.2; // 調降彈速，留下走位空間
+          const aiBulletSpeed = 5.5; // 慢速清晰子彈，肉眼輕鬆反應
           const flightTime = Math.min(25, playerDist / aiBulletSpeed);
-          // 預測玩家座標並加入 +-8 度的擬人微散佈
-          const predX = player.x + pVx * flightTime * 0.8;
-          const predY = player.y + pVy * flightTime * 0.8;
-          const humanJitter = (Math.random() - 0.5) * 0.28; // +-8度隨機散佈
+          const predX = player.x + pVx * flightTime * 0.5;
+          const predY = player.y + pVy * flightTime * 0.5;
+          const humanJitter = (Math.random() - 0.5) * 0.42; // +-12 度擬真散佈
           const leadAng = Math.atan2(predY - phantomAI.y, predX - phantomAI.x) + humanJitter;
 
-          const mainShotCount = isBerserk ? 2 : 1;
-          const spread = 0.16;
-          const startOffset = -(mainShotCount - 1) * spread / 2;
-          for (let s = 0; s < mainShotCount; s++) {
-            const ang = leadAng + startOffset + s * spread;
-            bullets.push({
-              x: phantomAI.x, y: phantomAI.y,
-              vx: Math.cos(ang) * aiBulletSpeed, vy: Math.sin(ang) * aiBulletSpeed,
-              damage: 16, life: 65, isEcho: false, isSub: false, isAI: true
-            });
-          }
+          // 永遠只發射 1 顆清晰光球，徹底杜絕密集彈幕
+          bullets.push({
+            x: phantomAI.x, y: phantomAI.y,
+            vx: Math.cos(leadAng) * aiBulletSpeed, vy: Math.sin(leadAng) * aiBulletSpeed,
+            damage: 10, life: 75, isEcho: false, isSub: false, isAI: true
+          });
           AudioEngine.playLaser();
           phantomAI.attackCd = mainAttackSpeed;
         }
 
-        // 4. 【AI 副武器追蹤飛彈 (調降轉向力至 0.08，大弧線可被甩脫)】
+        // 4. 【AI 副武器追蹤飛彈 (單枚、大弧線慢速、低頻率發射)】
         phantomAI.subAttackCd--;
         if (phantomAI.subAttackCd <= 0) {
-          const subCount = isBerserk ? 2 : 1; // 調降飛彈數量
           const baseAng = Math.atan2(player.y - phantomAI.y, player.x - phantomAI.x);
-          for (let s = 0; s < subCount; s++) {
-            const angOffset = (s - (subCount - 1) / 2) * 0.38;
-            bullets.push({
-              x: phantomAI.x, y: phantomAI.y,
-              vx: Math.cos(baseAng + angOffset) * 6.5, vy: Math.sin(baseAng + angOffset) * 6.5,
-              damage: 14, life: 80,
-              isEcho: false, isSub: true, isAI: true,
-              target: player,
-              turnSpeed: 0.08 // 柔和轉向弧線
-            });
-          }
+          bullets.push({
+            x: phantomAI.x, y: phantomAI.y,
+            vx: Math.cos(baseAng) * 5.0, vy: Math.sin(baseAng) * 5.0,
+            damage: 8, life: 90,
+            isEcho: false, isSub: true, isAI: true,
+            target: player,
+            turnSpeed: 0.06 // 超柔和轉向，只要側向移動或回溯即可輕易甩開
+          });
           phantomAI.subAttackCd = subAttackSpeed;
         }
 
-        // 5. 【AI 殘像同步射擊與雷射連線】
+        // 5. 【AI 殘像射擊頻率大幅降低至 45 幀一發】
         for (let k = phantomAI.echoes.length - 1; k >= 0; k--) {
           const aie = phantomAI.echoes[k];
           aie.lifeTimer--;
@@ -2285,22 +2268,22 @@
             const aieAng = Math.atan2(player.y - aie.y, player.x - aie.x);
             bullets.push({
               x: aie.x, y: aie.y,
-              vx: Math.cos(aieAng) * 8.5, vy: Math.sin(aieAng) * 8.5,
-              damage: 14, life: 55, isEcho: true, isSub: false, isAI: true
+              vx: Math.cos(aieAng) * 5.0, vy: Math.sin(aieAng) * 5.0,
+              damage: 8, life: 65, isEcho: true, isSub: false, isAI: true
             });
-            aie.shootCd = 16;
+            aie.shootCd = 45; // 45 幀 (0.75 秒) 才射一發
           }
 
           if (aie.lifeTimer <= 0) phantomAI.echoes.splice(k, 1);
         }
 
-        // 6. AI 紅色時空雷射連線割裂玩家
+        // 6. AI 紅色時空雷射割裂玩家
         if (phantomAI.echoes.length > 0) {
           const aie = phantomAI.echoes[0];
           if (pointToSegmentDist(player.x, player.y, phantomAI.x, phantomAI.y, aie.x, aie.y) < player.radius + 4) {
             if (player.invulnerable <= 0) {
               player.hp -= phantomAI.resonanceDmg;
-              player.invulnerable = 4;
+              player.invulnerable = 6;
               STATE.shake = 3;
             }
           }
