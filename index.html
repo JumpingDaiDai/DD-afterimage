@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.20</title>
+  <title>AFTERIMAGE v0.0.23</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,12 +56,12 @@
       display: block;
       z-index: 1;
     }
-    /* 懸浮 HUD 介面 */
+    /* 懸浮 HUD 介面 (融合 Safe Area Inset，防瀏海/動態島/曲面螢幕切角) */
     .hud {
       position: absolute;
-      top: env(safe-area-inset-top, 12px);
-      left: 12px;
-      right: 12px;
+      top: max(env(safe-area-inset-top, 14px), 14px);
+      left: max(env(safe-area-inset-left, 18px), 18px);
+      right: max(env(safe-area-inset-right, 18px), 18px);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -71,24 +71,26 @@
     .hud-left {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
+      pointer-events: auto;
     }
     .bar-container {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 999px;
-      padding: 2px 8px;
+      padding: 3px 10px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      min-width: 150px;
+      gap: 8px;
+      min-width: 135px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
-    .bar-label { font-size: 10px; font-weight: 800; color: #94a3b8; width: 26px; }
+    .bar-label { font-size: 11px; font-weight: 800; color: #94a3b8; width: 30px; }
     .bar-track {
       flex: 1;
-      height: 6px;
-      background: rgba(0, 0, 0, 0.5);
+      height: 7px;
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 999px;
       overflow: hidden;
       position: relative;
@@ -102,33 +104,61 @@
     .exp-fill { background: linear-gradient(90deg, #06b6d4, #38bdf8); }
     .ai-hp-fill { background: linear-gradient(90deg, #a855f7, #ec4899); }
     .duel-hud-center {
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 999px;
       padding: 4px 14px;
       display: none;
       align-items: center;
       gap: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
     .hud-right {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      padding: 4px 12px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      padding: 4px 10px;
       text-align: right;
       pointer-events: auto;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
     .score-text { font-size: 13px; font-weight: 800; color: var(--gold); }
     .timer-text { font-size: 11px; color: #cbd5e1; font-family: monospace; }
-    .doc-link {
-      font-size: 10px;
-      color: var(--primary);
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 2px;
-      font-weight: bold;
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 8px;
+      color: #7dd3fc;
+      cursor: pointer;
+      min-width: 38px;
+      min-height: 34px;
+      padding: 4px 8px;
+      font-size: 14px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hud-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .hud-btn:active {
+      transform: scale(0.92);
+      background: rgba(56, 189, 248, 0.4);
+    }
+    .hud-btn.muted {
+      color: #94a3b8;
+      border-color: rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.18);
     }
 
     /* 方案 A 控制區：經典手遊左搖桿 + 右側人體工學扇形雙技能鍵 */
@@ -641,9 +671,10 @@
         <span id="ai-charge-badge" style="font-size: 10px; font-weight: 900; color: #facc15; font-family: 'Orbitron', monospace;">CHG 2</span>
       </div>
       <div class="hud-right">
-        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
           <div class="score-text" id="hud-score-label">KILLS <span id="kill-count">0</span></div>
-          <button id="btn-fullscreen" title="全螢幕" style="background: none; border: none; font-size: 14px; color: #7dd3fc; cursor: pointer; padding: 2px 4px;">[ ]</button>
+          <button id="btn-mute" class="hud-btn" title="切換靜音" aria-label="切換靜音">🔊</button>
+          <button id="btn-fullscreen" class="hud-btn" title="全螢幕" aria-label="全螢幕">[ ]</button>
         </div>
         <div class="timer-text" id="time-display">00:00</div>
       </div>
@@ -678,8 +709,11 @@
       <!-- 幾何光球與殘像連線動態 Canvas -->
       <canvas id="home-canvas"></canvas>
 
-      <!-- 右上角極簡版本號標籤 -->
-      <div class="version-tag-corner">RELEASE v0.0.20</div>
+      <!-- 右上角極簡版本號標籤與靜音按鈕 -->
+      <div style="position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 18px), 18px); display: flex; align-items: center; gap: 8px; z-index: 3;">
+        <button id="btn-home-mute" class="hud-btn" style="border-radius: 999px; min-height: 34px; padding: 6px 14px; font-size: 13px; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35);" title="切換靜音" aria-label="切換靜音">🔊 音效開</button>
+        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.23</div>
+      </div>
 
       <div class="home-header">
         <div class="logo-container">
@@ -725,7 +759,70 @@
   </div>
 
   <script>
-    function dbgLog(msg) {}
+    // ─── Mobile Debug: 手機 log 回傳電腦 ─────────────────
+    function dbgLog(msg) {
+      console.log('[GameLog]', msg);
+      const logBox = document.getElementById('debug-log');
+      if (logBox) {
+        const line = document.createElement('div');
+        line.style.borderBottom = '1px dashed #222';
+        line.style.padding = '2px 0';
+        line.textContent = `[${new Date().toTimeString().split(' ')[0]}] ${msg}`;
+        logBox.appendChild(line);
+        while (logBox.children.length > 51) {
+          logBox.removeChild(logBox.children[1]);
+        }
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+    }
+
+    window.addEventListener('error', (e) => {
+      dbgLog(`❌ JS Error: ${e.message} (${e.filename}:${e.lineno})`);
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+      dbgLog(`❌ Promise Error: ${e.reason}`);
+    });
+
+    let DEBUG_TOKEN = '';
+    fetch('/__token').then(r => (r.ok ? r.text() : '')).then(t => { DEBUG_TOKEN = t.trim(); }).catch(() => {});
+
+    (function setupRemoteLog() {
+      const orig = { log: console.log, warn: console.warn, error: console.error };
+      function forward(level, args) {
+        const msg = args.map(a => {
+          try { return typeof a === 'string' ? a : JSON.stringify(a); }
+          catch (e) { return String(a); }
+        }).join(' ');
+        fetch('/__log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Token': DEBUG_TOKEN },
+          body: JSON.stringify({ level, msg })
+        }).catch(() => {});
+      }
+      ['log', 'warn', 'error'].forEach(level => {
+        console[level] = function (...args) {
+          orig[level].apply(console, args);
+          forward(level, args);
+        };
+      });
+    })();
+
+    function dbgUploadScreenshot() {
+      const canvas = document.getElementById('game-canvas');
+      if (!canvas) return;
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        fetch('/__upload', { method: 'POST', headers: { 'X-Debug-Token': DEBUG_TOKEN }, body: blob })
+          .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            dbgLog('📷 截圖已上傳');
+          })
+          .catch(() => dbgLog('📷 截圖上傳失敗（devserver 未啟動或 token 不符？）'));
+      }, 'image/png');
+    }
+
+    dbgLog('Script loading...');
 
     // --- 遊戲核心引擎 ---
     const root = document.getElementById('game-root');
@@ -861,15 +958,60 @@
     // 音效合成系統 (Web Audio)
     const AudioEngine = {
       ctx: null,
+      masterGain: null,
+      enabled: (() => {
+        try {
+          const saved = localStorage.getItem('dd_afterimage_sound_enabled');
+          return saved !== null ? saved === 'true' : true;
+        } catch (e) {
+          return true;
+        }
+      })(),
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = this.enabled ? 0.35 : 0;
+            this.masterGain.connect(this.ctx.destination);
+          }
         }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      toggleMute() {
+        this.enabled = !this.enabled;
+        try {
+          localStorage.setItem('dd_afterimage_sound_enabled', String(this.enabled));
+        } catch (e) {}
+
+        if (this.ctx && this.masterGain) {
+          const now = this.ctx.currentTime;
+          this.masterGain.gain.cancelScheduledValues(now);
+          this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+          this.masterGain.gain.linearRampToValueAtTime(this.enabled ? 0.35 : 0, now + 0.05);
+        }
+        this.updateUI();
+        return this.enabled;
+      },
+      updateUI() {
+        const btnMute = document.getElementById('btn-mute');
+        const btnHomeMute = document.getElementById('btn-home-mute');
+        if (btnMute) {
+          btnMute.innerText = this.enabled ? '🔊' : '🔇';
+          btnMute.title = this.enabled ? '音效開啟 (點擊靜音)' : '音效已靜音 (點擊開啟)';
+          btnMute.classList.toggle('muted', !this.enabled);
+        }
+        if (btnHomeMute) {
+          btnHomeMute.innerText = this.enabled ? '🔊 音效開' : '🔇 靜音中';
+          btnHomeMute.title = this.enabled ? '音效開啟 (點擊靜音)' : '音效已靜音 (點擊開啟)';
+          btnHomeMute.classList.toggle('muted', !this.enabled);
+        }
       },
       playLaser() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
@@ -878,12 +1020,30 @@
         gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
+      playMissileLaunch() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.09, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      },
       playHit() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -892,12 +1052,14 @@
         gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.06);
       },
       playRewind() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -906,12 +1068,14 @@
         gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.25);
       },
       playSwap() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'square';
@@ -920,12 +1084,14 @@
         gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.1);
       },
       playGem() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -934,12 +1100,14 @@
         gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
       playShieldBlock() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -948,12 +1116,14 @@
         gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.08);
       },
       playOrbLaunch() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -962,12 +1132,14 @@
         gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.15);
       },
       playOrbExplode() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
@@ -976,12 +1148,14 @@
         gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.35);
       },
       playBossSpawn() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -990,26 +1164,45 @@
         gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.5);
       },
       playSlash() {
-        if (!this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.2);
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
+        const now = this.ctx.currentTime;
+        // 高頻金屬破空居合刃鳴 (Sawtooth 1600Hz -> 180Hz)
+        const osc1 = this.ctx.createOscillator();
+        const gain1 = this.ctx.createGain();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(1600, now);
+        osc1.frequency.exponentialRampToValueAtTime(180, now + 0.22);
+        gain1.gain.setValueAtTime(0.35, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc1.connect(gain1);
+        gain1.connect(this.masterGain);
+        osc1.start(now);
+        osc1.stop(now + 0.22);
+
+        // 低頻時空斬裂重音震撼 (Sine 220Hz -> 40Hz)
+        const osc2 = this.ctx.createOscillator();
+        const gain2 = this.ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(220, now);
+        osc2.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        gain2.gain.setValueAtTime(0.4, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc2.connect(gain2);
+        gain2.connect(this.masterGain);
+        osc2.start(now);
+        osc2.stop(now + 0.3);
       },
       playDeathDefied() {
-        if (!this.ctx) return;
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || !this.masterGain) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -1018,7 +1211,7 @@
         gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.masterGain);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.5);
       }
@@ -1085,11 +1278,14 @@
       // 主武器系統 (前向開路)
       mainCount: 1, // 主武器前向彈數
       mainDmg: 22, // 主武器傷害
-      // 副武器系統 (自動追蹤自衛飛彈)
-      subCount: 0, // 副武器飛彈數 (預設 0，升級解鎖後發射)
+      // 副武器系統 (自動追蹤自衛飛彈：連發佇列機制)
+      subCount: 0, // 副武器連發飛彈數 (預設 0，升級解鎖後發射)
       subDmg: 16, // 副武器傷害
       subAttackCd: 0,
-      subAttackSpeed: 24, // 副武器射擊間隔
+      subAttackSpeed: 32, // 大輪次冷卻間隔
+      subBurstQueue: 0, // 當前輪次剩餘連發發數
+      subBurstTimer: 0, // 連發小間隔計時器
+      subBurstInterval: 5, // 連發小間隔 (5 幀 ≈ 0.08 秒極速連射)
       // 回溯充能機制 (基礎 2 次充能，點擊升級可擴充)
       echoCharges: 2,
       maxEchoCharges: 2,
@@ -1098,7 +1294,7 @@
       maxEchoCount: 2, // 同時在場最大殘像數
       history: [],
       maxHistory: 180,
-      resonanceDmg: 0.9,
+      resonanceDmg: 1.8, // 基礎共振每幀 1.8 點 (結界內部暴擊 3.6 點 / 216 DPS)
       orbitalBlade: 0,
       bladeAngle: 0,
       orbCd: 0,
@@ -1119,6 +1315,7 @@
     const gems = [];
     const particles = [];
     const popups = [];
+    const slashLines = [];
 
     // 鍵盤輸入
     const keys = {};
@@ -1127,10 +1324,31 @@
       if (e.code === 'Space') triggerEcho();
       if (e.key.toLowerCase() === 'q') triggerSwap();
       if (e.key.toLowerCase() === 'e') triggerLockOn();
+      if (e.key.toLowerCase() === 'm') {
+        AudioEngine.init();
+        AudioEngine.toggleMute();
+      }
     });
     window.addEventListener('keyup', e => {
       keys[e.key.toLowerCase()] = false;
     });
+
+    // 靜音按鈕事件綁定 (HUD 頂部與首頁右上角)
+    const btnMute = document.getElementById('btn-mute');
+    const btnHomeMute = document.getElementById('btn-home-mute');
+    [btnMute, btnHomeMute].forEach(btn => {
+      if (!btn) return;
+      btn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioEngine.init();
+        AudioEngine.toggleMute();
+      });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
+    // 初始化靜音按鈕顯示狀態
+    AudioEngine.updateUI();
 
     // --- 方案 A：左側固定搖桿控制 (嚴格使用 Touch 事件並主動 preventDefault 徹底封殺 iOS 放大鏡) ---
     const joyBase = document.getElementById('joystick-base');
@@ -1446,50 +1664,104 @@
         player.invulnerable = 20;
       }
 
-      // 天賦一：量子穿梭居合斬 (Phantom Slash)
+      // 天賦一：量子穿梭居合斬 (Phantom Slash - 頂級視覺震懾與居合時空裂縫)
       if (player.phantomSlash > 0) {
         AudioEngine.playSlash();
-        STATE.shake = 12;
-        const slashDmg = 90 * player.phantomSlash;
+        STATE.shake = 18; // 巨幅時空震屏
+        const slashDmg = 120 * player.phantomSlash;
         let slashedCount = 0;
 
-        for (const e of enemies) {
-          // 判定怪物是否處於本體與殘像瞬移路徑 (px, py) -> (player.x, player.y) 兩側 28px 內
-          if (pointToSegmentDist(e.x, e.y, px, py, player.x, player.y) < e.radius + 28) {
-            e.hp -= slashDmg;
-            e.flash = 5;
-            slashedCount++;
-            popups.push({ x: e.x, y: e.y - 12, text: `SLASH ${slashDmg}`, life: 30, color: '#facc15' });
+        // 1. 記錄時空居合刀光裂隙 (白熾居合主光刃 + 金粉能量流光)
+        slashLines.push({
+          x1: px,
+          y1: py,
+          x2: player.x,
+          y2: player.y,
+          life: 18,
+          maxLife: 18,
+          width: 22 + player.phantomSlash * 6
+        });
 
-            // 怪物受擊擊退
-            const angle = Math.atan2(e.y - py, e.x - px);
-            e.x += Math.cos(angle) * 16;
-            e.y += Math.sin(angle) * 16;
+        // 2. 起點與終點爆發雙重衝擊波
+        [ { x: px, y: py }, { x: player.x, y: player.y } ].forEach(pt => {
+          for (let i = 0; i < 16; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const spd = 3.5 + Math.random() * 5.0;
+            particles.push({
+              x: pt.x,
+              y: pt.y,
+              vx: Math.cos(ang) * spd,
+              vy: Math.sin(ang) * spd,
+              life: 22,
+              color: i % 2 === 0 ? '#facc15' : '#ffffff',
+              size: 3.5
+            });
+          }
+        });
+
+        // 3. 判定生存模式怪物割裂
+        for (const e of enemies) {
+          // 判定怪物是否處於本體與殘像瞬移路徑 (px, py) -> (player.x, player.y) 兩側 45px 內
+          if (pointToSegmentDist(e.x, e.y, px, py, player.x, player.y) < e.radius + 45) {
+            e.hp -= slashDmg;
+            e.flash = 8;
+            slashedCount++;
+            popups.push({ x: e.x, y: e.y - 16, text: `SLASH ${slashDmg}`, life: 35, color: '#facc15' });
+
+            // 垂直於居合斬擊方向強力向兩側震飛
+            const slashAngle = Math.atan2(player.y - py, player.x - px);
+            const perpAngle = slashAngle + (Math.random() > 0.5 ? Math.PI / 2 : -Math.PI / 2);
+            e.x += Math.cos(perpAngle) * 32;
+            e.y += Math.sin(perpAngle) * 32;
+
+            // 受擊點爆發高能斬擊火花
+            for (let sp = 0; sp < 8; sp++) {
+              const spAng = slashAngle + (Math.random() - 0.5) * 1.5;
+              const spSpd = 4 + Math.random() * 6;
+              particles.push({
+                x: e.x, y: e.y,
+                vx: Math.cos(spAng) * spSpd, vy: Math.sin(spAng) * spSpd,
+                life: 16, color: '#facc15', size: 3
+              });
+            }
           }
         }
 
-        // 金色居合裂空光塵粒子
-        for (let i = 0; i < 28; i++) {
+        // 4. 1v1 對決模式 AI 割裂判定
+        if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+          if (pointToSegmentDist(phantomAI.x, phantomAI.y, px, py, player.x, player.y) < phantomAI.radius + 45) {
+            if (phantomAI.invulnerable <= 0) {
+              phantomAI.hp -= slashDmg;
+              phantomAI.invulnerable = 15;
+              popups.push({ x: phantomAI.x, y: phantomAI.y - 18, text: `CRIT SLASH ${slashDmg}`, life: 35, color: '#facc15' });
+              STATE.shake = 22;
+            }
+          }
+        }
+
+        // 5. 沿著瞬移軌跡噴射 45 枚居合裂空金光光塵
+        for (let i = 0; i < 45; i++) {
           const t = Math.random();
           const perpAng = Math.atan2(player.y - py, player.x - px) + (Math.PI / 2);
-          const offset = (Math.random() - 0.5) * 24;
+          const offset = (Math.random() - 0.5) * 36;
           particles.push({
             x: px + (player.x - px) * t + Math.cos(perpAng) * offset,
             y: py + (player.y - py) * t + Math.sin(perpAng) * offset,
-            vx: (Math.random() - 0.5) * 3,
-            vy: (Math.random() - 0.5) * 3,
-            life: 24, color: '#facc15', size: 3
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            life: 28, color: i % 3 === 0 ? '#ffffff' : '#facc15', size: 3.5
           });
         }
       } else {
-        for (let i = 0; i < 12; i++) {
+        // 未解鎖居合時的普通換位光塵
+        for (let i = 0; i < 14; i++) {
           const t = Math.random();
           particles.push({
             x: px + (player.x - px) * t,
             y: py + (player.y - py) * t,
             vx: (Math.random() - 0.5) * 2,
             vy: (Math.random() - 0.5) * 2,
-            life: 18, color: '#facc15', size: 2.5
+            life: 18, color: '#38bdf8', size: 2.5
           });
         }
       }
@@ -1521,7 +1793,7 @@
       {
         id: 'sub_unlock',
         title: '量子尋標飛彈',
-        desc: '【副武器】解鎖 / 追蹤飛彈數 +1（自動追擊最近敵人）',
+        desc: '【副武器】解鎖 / 連發數 +1（極速連射，自動追擊最近敵人）',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3" fill="#ec4899" />
           <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
@@ -1535,12 +1807,12 @@
       {
         id: 'sub_overload',
         title: '飛彈射頻過載',
-        desc: '【副武器】追蹤飛彈射速 +30%，傷害 +25%',
+        desc: '【副武器】連發輪次冷卻 -30%，傷害 +25%',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="rgba(236, 72, 153, 0.25)" />
         </svg>`,
         apply: () => {
-          player.subAttackSpeed = Math.max(10, Math.floor(player.subAttackSpeed * 0.7));
+          player.subAttackSpeed = Math.max(12, Math.floor(player.subAttackSpeed * 0.7));
           player.subDmg = Math.round(player.subDmg * 1.25);
           player.subAttackCd = 0;
         }
@@ -1764,37 +2036,40 @@
         }
       }
 
-      // 2. 主武器發射：前方開路（青藍穿甲雷射，永不中斷）
+      // 2. 主武器發射：前方開路（青藍穿甲雷射，嚴格前方 +-15 度，共 30 度視錐）
       player.attackCd--;
       if (player.attackCd <= 0) {
         let aimAngle = player.facingAngle;
-        const maxAimCone = Math.PI * (15 / 180); // 正負 15 度 (共 30 度視錐)
+        const forwardAimCone = Math.PI * (15 / 180); // 正負 15 度 (前方共 30 度開路視錐)
 
         if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
-          // 1v1 死鬥模式：若 AI 處於前方 30 度內，100% 直接精準瞄準 AI 核心
+          // 1v1 死鬥模式：若 AI 處於前方 30 度視錐內則瞄準，否則保持前向直射
           const directAngle = Math.atan2(phantomAI.y - player.y, phantomAI.x - player.x);
           const diff = Math.abs(normalizeAngle(directAngle - player.facingAngle));
-          if (diff <= maxAimCone) {
+          if (diff <= forwardAimCone) {
             aimAngle = directAngle;
           }
         } else if (enemies && enemies.length > 0) {
-          // 生存模式：若有敵人在前方 30 度內，100% 直接精準瞄準最近的目標
-          let nearestAngle = null, minDist = Infinity;
+          // 生存模式：僅在「前方 30 度視錐內」微調瞄準最近的怪物；其餘情況維持前向直射
+          let coneTargetAngle = null, coneMinDist = Infinity;
+
           for (let i = 0; i < enemies.length; i++) {
             const e = enemies[i];
             if (!e || e.hp <= 0) continue;
             const enemyAngle = Math.atan2(e.y - player.y, e.x - player.x);
             const diff = Math.abs(normalizeAngle(enemyAngle - player.facingAngle));
-            if (diff <= maxAimCone) {
+
+            if (diff <= forwardAimCone) {
               const d = Math.hypot(e.x - player.x, e.y - player.y);
-              if (d < minDist) {
-                minDist = d;
-                nearestAngle = enemyAngle;
+              if (d < coneMinDist) {
+                coneMinDist = d;
+                coneTargetAngle = enemyAngle;
               }
             }
           }
-          if (nearestAngle !== null) {
-            aimAngle = nearestAngle;
+
+          if (coneTargetAngle !== null) {
+            aimAngle = coneTargetAngle;
           }
         }
 
@@ -1817,48 +2092,66 @@
         player.attackCd = Math.max(1, player.attackSpeed);
       }
 
-      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子火箭，完全獨立運作)
+      // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子火箭，極速連發佇列機制)
       if (player.subCount > 0) {
-        player.subAttackCd--;
-        if (player.subAttackCd <= 0) {
-          let target = null;
-          if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
-            target = phantomAI;
-          } else if (enemies && enemies.length > 0) {
-            let minDist = Infinity;
-            for (let i = 0; i < enemies.length; i++) {
-              const e = enemies[i];
-              if (!e || e.hp <= 0) continue;
-              const d = Math.hypot(e.x - player.x, e.y - player.y);
-              if (d < minDist) {
-                minDist = d;
-                target = e;
+        // 1. 若目前有正在連發的佇列，每隔 subBurstInterval (約 0.08s) 射出 1 發
+        if (player.subBurstQueue > 0) {
+          player.subBurstTimer--;
+          if (player.subBurstTimer <= 0) {
+            let target = null;
+            if (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) {
+              target = phantomAI;
+            } else if (enemies && enemies.length > 0) {
+              // 每次連發動態鎖定當下全場最近的怪物
+              let minDist = Infinity;
+              for (const e of enemies) {
+                if (!e || e.hp <= 0) continue;
+                const d = Math.hypot(e.x - player.x, e.y - player.y);
+                if (d < minDist) {
+                  minDist = d;
+                  target = e;
+                }
               }
             }
-          }
 
-          if (target) {
-            const baseAng = Math.atan2(target.y - player.y, target.x - player.x);
-            for (let i = 0; i < player.subCount; i++) {
-              const angOffset = (i - (player.subCount - 1) / 2) * 0.35;
-              const launchAng = baseAng + angOffset;
+            if (target) {
+              const baseAng = Math.atan2(target.y - player.y, target.x - player.x);
+              // 左右微幅交錯射出 (左翼/右翼交替火箭發射感)
+              const sideOffset = (player.subBurstQueue % 2 === 0 ? 1 : -1) * 6;
+              const launchJitter = (Math.random() - 0.5) * 0.25;
+              const launchAng = baseAng + launchJitter;
+
               bullets.push({
-                x: player.x,
-                y: player.y,
-                vx: Math.cos(launchAng) * 7.5,
-                vy: Math.sin(launchAng) * 7.5,
+                x: player.x + Math.cos(baseAng + Math.PI / 2) * sideOffset,
+                y: player.y + Math.sin(baseAng + Math.PI / 2) * sideOffset,
+                vx: Math.cos(launchAng) * 8.0,
+                vy: Math.sin(launchAng) * 8.0,
                 damage: player.subDmg,
-                life: 75,
+                life: 80,
                 isEcho: false,
                 isSub: true,
                 target: target,
-                turnSpeed: 0.14
+                turnSpeed: 0.15
               });
+              try { AudioEngine.playMissileLaunch(); } catch (e) {}
             }
-            player.subAttackCd = Math.max(1, player.subAttackSpeed);
-          } else {
-            // 場上暫時無怪時，保持隨時待發狀態
-            player.subAttackCd = 0;
+
+            player.subBurstQueue--;
+            player.subBurstTimer = player.subBurstInterval;
+          }
+        } else {
+          // 2. 佇列發射完畢，倒數大輪次冷卻
+          player.subAttackCd--;
+          if (player.subAttackCd <= 0) {
+            const hasEnemy = (STATE.gameMode === 'duel' && phantomAI && phantomAI.hp > 0) || (enemies && enemies.some(e => e && e.hp > 0));
+            if (hasEnemy) {
+              // 裝填連發佇列，立即觸發連發
+              player.subBurstQueue = player.subCount;
+              player.subBurstTimer = 0; // 第一發立即射出
+              player.subAttackCd = Math.max(12, player.subAttackSpeed);
+            } else {
+              player.subAttackCd = 0;
+            }
           }
         }
         AudioEngine.playLaser();
@@ -1929,13 +2222,23 @@
         }
       }
 
-      // 殘像雷射割裂與結界判定 (透過 Convex Hull 自動構建向外凸起的包絡多邊形，絕不凹陷或自交)
+      // 殘像雷射割裂與結界判定 (透過 Convex Hull 自動構建向外凸起的包絡多邊形，高能時空湮滅殺陣)
       if (echoes.length === 1) {
         const ec = echoes[0];
         for (const enemy of enemies) {
-          if (pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y) < enemy.radius + 4) {
-            enemy.hp -= player.resonanceDmg;
-            enemy.flash = 2;
+          if (pointToSegmentDist(enemy.x, enemy.y, player.x, player.y, ec.x, ec.y) < enemy.radius + 6) {
+            enemy.hp -= player.resonanceDmg; // 每幀 1.8 點 (108 DPS！)
+            enemy.flash = 3;
+            if (frameCount % 10 === 0) {
+              popups.push({ x: enemy.x, y: enemy.y - 10, text: Math.round(player.resonanceDmg * 10), life: 18, color: '#ec4899' });
+            }
+            if (Math.random() < 0.3) {
+              particles.push({
+                x: enemy.x + (Math.random() - 0.5) * 8, y: enemy.y + (Math.random() - 0.5) * 8,
+                vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3,
+                life: 12, color: '#ec4899', size: 2.2
+              });
+            }
           }
         }
       } else if (echoes.length >= 2) {
@@ -1943,29 +2246,49 @@
         const hull = getConvexHull(allPoints);
 
         for (const enemy of enemies) {
-          // 判定一：怪物位於凸包多邊形內部
-          let isHit = isPointInPolygon({ x: enemy.x, y: enemy.y }, hull);
+          // 判定一：怪物位於凸包多邊形內部 (面殺傷：200+ DPS 絕對禁區)
+          let isInside = isPointInPolygon({ x: enemy.x, y: enemy.y }, hull);
+          let isEdge = false;
 
           // 判定二：怪物碰觸到凸包雷射連線邊界
-          if (!isHit) {
+          if (!isInside) {
             for (let j = 0; j < hull.length; j++) {
               const p1 = hull[j];
               const p2 = hull[(j + 1) % hull.length];
-              if (pointToSegmentDist(enemy.x, enemy.y, p1.x, p1.y, p2.x, p2.y) < enemy.radius + 4) {
-                isHit = true;
+              if (pointToSegmentDist(enemy.x, enemy.y, p1.x, p1.y, p2.x, p2.y) < enemy.radius + 6) {
+                isEdge = true;
                 break;
               }
             }
           }
 
-          if (isHit) {
-            enemy.hp -= player.resonanceDmg * 1.5;
-            enemy.flash = 2;
-            if (Math.random() < 0.2) {
+          if (isInside || isEdge) {
+            // 內部受困承受 2.0x 倍暴擊湮滅傷害 (每幀 3.6 點 = 216 DPS！)
+            const dmgThisFrame = isInside ? player.resonanceDmg * 2.0 : player.resonanceDmg;
+            enemy.hp -= dmgThisFrame;
+            enemy.flash = 4;
+
+            // 內部怪物受到時空重力壓制減速
+            if (isInside && enemy.speed) {
+              enemy.x += (Math.random() - 0.5) * 0.8;
+              enemy.y += (Math.random() - 0.5) * 0.8;
+            }
+
+            if (frameCount % 8 === 0) {
+              popups.push({
+                x: enemy.x,
+                y: enemy.y - 12,
+                text: Math.round(dmgThisFrame * 8),
+                life: 20,
+                color: isInside ? '#facc15' : '#ec4899'
+              });
+            }
+
+            if (Math.random() < 0.4) {
               particles.push({
                 x: enemy.x, y: enemy.y,
-                vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3,
-                life: 10, color: '#facc15', size: 1.8
+                vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
+                life: 14, color: isInside ? '#facc15' : '#ec4899', size: 2.5
               });
             }
           }
@@ -2559,7 +2882,12 @@
         }
       }
 
-      // 7. 粒子與飄字
+      // 7. 居合斬擊時空裂隙、粒子與飄字
+      for (let i = slashLines.length - 1; i >= 0; i--) {
+        const sl = slashLines[i];
+        sl.life--;
+        if (sl.life <= 0) slashLines.splice(i, 1);
+      }
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
@@ -2766,11 +3094,13 @@
 
         if (hull.length >= 3) {
           ctx.save();
-          ctx.fillStyle = 'rgba(236, 72, 153, 0.14)';
-          ctx.strokeStyle = '#ec4899';
-          ctx.lineWidth = 2;
+          // 動態呼吸脈衝結界能量面
+          const hullPulse = 0.22 + Math.sin(frameCount * 0.15) * 0.08;
+          ctx.fillStyle = `rgba(236, 72, 153, ${hullPulse})`;
+          ctx.strokeStyle = '#f43f5e';
+          ctx.lineWidth = 3;
           ctx.shadowColor = '#ec4899';
-          ctx.shadowBlur = 14;
+          ctx.shadowBlur = 20;
           ctx.beginPath();
           ctx.moveTo(hull[0].x, hull[0].y);
           for (let h = 1; h < hull.length; h++) {
@@ -2780,10 +3110,11 @@
           ctx.fill();
           ctx.stroke();
 
-          // 結界內部流光光芒
-          ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([6, 6]);
+          // 核心白金電弧光流
+          ctx.strokeStyle = '#fef08a';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([8, 8]);
+          ctx.lineDashOffset = -frameCount * 1.5;
           ctx.stroke();
 
           ctx.restore();
@@ -3207,6 +3538,75 @@
       ctx.fill();
       ctx.restore();
 
+      // 6.8 居合斬擊：時空斷裂巨型光刃 (Phantom Slash Blade Rift & Flash)
+      for (const sl of slashLines) {
+        ctx.save();
+        const progress = 1 - (sl.life / sl.maxLife); // 0 -> 1
+        const alpha = Math.sin(Math.PI * (1 - progress)); // 凸型平滑淡出
+        const curWidth = sl.width * (1 - progress * 0.4);
+
+        // 1. 最外層金粉/烈焰時空崩解光霧
+        ctx.save();
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = curWidth * 1.8;
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = alpha * 0.45;
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 24;
+        ctx.beginPath();
+        ctx.moveTo(sl.x1, sl.y1);
+        ctx.lineTo(sl.x2, sl.y2);
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. 中層高能量子金色光刃
+        ctx.save();
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = curWidth * 0.8;
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = alpha * 0.85;
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.moveTo(sl.x1, sl.y1);
+        ctx.lineTo(sl.x2, sl.y2);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. 核心純白等離子超高速切裂線
+        ctx.save();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(2, curWidth * 0.25);
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.moveTo(sl.x1, sl.y1);
+        ctx.lineTo(sl.x2, sl.y2);
+        ctx.stroke();
+        ctx.restore();
+
+        // 4. 起點與終點金色菱形斬擊星芒
+        [ { x: sl.x1, y: sl.y1 }, { x: sl.x2, y: sl.y2 } ].forEach(pt => {
+          ctx.save();
+          ctx.translate(pt.x, pt.y);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#facc15';
+          ctx.shadowBlur = 18;
+          ctx.globalAlpha = alpha;
+          const starR = 12 * (1 - progress);
+          ctx.beginPath();
+          ctx.moveTo(0, -starR);
+          ctx.lineTo(starR * 0.35, 0);
+          ctx.lineTo(0, starR);
+          ctx.lineTo(-starR * 0.35, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        });
+
+        ctx.restore();
+      }
+
       // 7. 粒子效果
       for (const p of particles) {
         ctx.save();
@@ -3400,5 +3800,20 @@
     }
     requestAnimationFrame(loop);
   </script>
+  <!-- Mobile Debug: 浮動 Log 按鈕、日誌面板、截圖按鈕。加在 </body> 結尾前。 -->
+  <!-- 這個區塊整個是「除錯注入」的一部分：關閉除錯時要連同 console-forward-snippet.js 一起用 git revert 移除。 -->
+  <div id="debug-container" style="position:fixed;bottom:10px;right:10px;z-index:99999;">
+    <button id="debug-toggle-btn" style="background:#222;color:#00ff66;border:1px solid #00ff66;padding:4px 10px;border-radius:12px;font-size:11px;font-family:monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);touch-action:manipulation;" onclick="const l=document.getElementById('debug-log'); l.style.display = (l.style.display==='none'||l.style.display==='')?'block':'none';">
+      🐞 Log
+    </button>
+    <button id="debug-shot-btn" style="background:#222;color:#ffcc00;border:1px solid #ffcc00;padding:4px 10px;border-radius:12px;font-size:11px;font-family:monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);margin-left:4px;touch-action:manipulation;" onclick="if(window.dbgUploadScreenshot) dbgUploadScreenshot();">
+      📷 傳截圖
+    </button>
+    <div id="debug-log" style="display:none;position:absolute;bottom:32px;right:0;width:280px;max-height:180px;background:rgba(0,0,0,0.92);color:#00ff66;font-family:monospace;font-size:10px;padding:8px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.4);border:1px solid #333;overflow-y:auto;pointer-events:auto;">
+      <div style="border-bottom:1px solid #444;padding-bottom:4px;margin-bottom:4px;font-weight:bold;">
+        📋 系統偵錯日誌
+      </div>
+    </div>
+  </div>
 </body>
 </html>
