@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.23</title>
+  <title>AFTERIMAGE v0.0.24</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -712,7 +712,7 @@
       <!-- 右上角極簡版本號標籤與靜音按鈕 -->
       <div style="position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 18px), 18px); display: flex; align-items: center; gap: 8px; z-index: 3;">
         <button id="btn-home-mute" class="hud-btn" style="border-radius: 999px; min-height: 34px; padding: 6px 14px; font-size: 13px; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35);" title="切換靜音" aria-label="切換靜音">🔊 音效開</button>
-        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.23</div>
+        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.24</div>
       </div>
 
       <div class="home-header">
@@ -1856,9 +1856,17 @@
       }
     ];
 
+    let pendingLevelUps = 0;
+
     function showUpgradeModal() {
-      STATE.isPaused = true;
       const modal = document.getElementById('upgrade-modal');
+      // 同一幀內連續升級時排隊，避免後一次呼叫直接洗掉前一次已顯示的卡片
+      if (modal.classList.contains('active')) {
+        pendingLevelUps++;
+        return;
+      }
+
+      STATE.isPaused = true;
       const list = document.getElementById('card-list');
       list.innerHTML = '';
 
@@ -1885,7 +1893,12 @@
           AudioEngine.init();
           item.apply();
           modal.classList.remove('active');
-          STATE.isPaused = false;
+          if (pendingLevelUps > 0) {
+            pendingLevelUps--;
+            showUpgradeModal();
+          } else {
+            STATE.isPaused = false;
+          }
         };
         card.addEventListener('pointerdown', selectCard);
         list.appendChild(card);
