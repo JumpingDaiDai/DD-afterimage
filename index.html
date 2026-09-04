@@ -759,70 +759,7 @@
   </div>
 
   <script>
-    // ─── Mobile Debug: 手機 log 回傳電腦 ─────────────────
-    function dbgLog(msg) {
-      console.log('[GameLog]', msg);
-      const logBox = document.getElementById('debug-log');
-      if (logBox) {
-        const line = document.createElement('div');
-        line.style.borderBottom = '1px dashed #222';
-        line.style.padding = '2px 0';
-        line.textContent = `[${new Date().toTimeString().split(' ')[0]}] ${msg}`;
-        logBox.appendChild(line);
-        while (logBox.children.length > 51) {
-          logBox.removeChild(logBox.children[1]);
-        }
-        logBox.scrollTop = logBox.scrollHeight;
-      }
-    }
-
-    window.addEventListener('error', (e) => {
-      dbgLog(`❌ JS Error: ${e.message} (${e.filename}:${e.lineno})`);
-    });
-
-    window.addEventListener('unhandledrejection', (e) => {
-      dbgLog(`❌ Promise Error: ${e.reason}`);
-    });
-
-    let DEBUG_TOKEN = '';
-    fetch('/__token').then(r => (r.ok ? r.text() : '')).then(t => { DEBUG_TOKEN = t.trim(); }).catch(() => {});
-
-    (function setupRemoteLog() {
-      const orig = { log: console.log, warn: console.warn, error: console.error };
-      function forward(level, args) {
-        const msg = args.map(a => {
-          try { return typeof a === 'string' ? a : JSON.stringify(a); }
-          catch (e) { return String(a); }
-        }).join(' ');
-        fetch('/__log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Debug-Token': DEBUG_TOKEN },
-          body: JSON.stringify({ level, msg })
-        }).catch(() => {});
-      }
-      ['log', 'warn', 'error'].forEach(level => {
-        console[level] = function (...args) {
-          orig[level].apply(console, args);
-          forward(level, args);
-        };
-      });
-    })();
-
-    function dbgUploadScreenshot() {
-      const canvas = document.getElementById('game-canvas');
-      if (!canvas) return;
-      canvas.toBlob(blob => {
-        if (!blob) return;
-        fetch('/__upload', { method: 'POST', headers: { 'X-Debug-Token': DEBUG_TOKEN }, body: blob })
-          .then(res => {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            dbgLog('📷 截圖已上傳');
-          })
-          .catch(() => dbgLog('📷 截圖上傳失敗（devserver 未啟動或 token 不符？）'));
-      }, 'image/png');
-    }
-
-    dbgLog('Script loading...');
+    function dbgLog(msg) {}
 
     // --- 遊戲核心引擎 ---
     const root = document.getElementById('game-root');
@@ -3811,20 +3748,5 @@
     }
     requestAnimationFrame(loop);
   </script>
-  <!-- Mobile Debug: 浮動 Log 按鈕、日誌面板、截圖按鈕。加在 </body> 結尾前。 -->
-  <!-- 這個區塊整個是「除錯注入」的一部分：關閉除錯時要連同 console-forward-snippet.js 一起用 git revert 移除。 -->
-  <div id="debug-container" style="position:fixed;bottom:10px;right:10px;z-index:99999;">
-    <button id="debug-toggle-btn" style="background:#222;color:#00ff66;border:1px solid #00ff66;padding:4px 10px;border-radius:12px;font-size:11px;font-family:monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);touch-action:manipulation;" onclick="const l=document.getElementById('debug-log'); l.style.display = (l.style.display==='none'||l.style.display==='')?'block':'none';">
-      🐞 Log
-    </button>
-    <button id="debug-shot-btn" style="background:#222;color:#ffcc00;border:1px solid #ffcc00;padding:4px 10px;border-radius:12px;font-size:11px;font-family:monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);margin-left:4px;touch-action:manipulation;" onclick="if(window.dbgUploadScreenshot) dbgUploadScreenshot();">
-      📷 傳截圖
-    </button>
-    <div id="debug-log" style="display:none;position:absolute;bottom:32px;right:0;width:280px;max-height:180px;background:rgba(0,0,0,0.92);color:#00ff66;font-family:monospace;font-size:10px;padding:8px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.4);border:1px solid #333;overflow-y:auto;pointer-events:auto;">
-      <div style="border-bottom:1px solid #444;padding-bottom:4px;margin-bottom:4px;font-weight:bold;">
-        📋 系統偵錯日誌
-      </div>
-    </div>
-  </div>
 </body>
 </html>
