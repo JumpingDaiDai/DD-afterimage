@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.24</title>
+  <title>AFTERIMAGE v0.0.25</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -339,6 +339,14 @@
       transform: translateY(-2px);
       background: #243248;
       box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    }
+    .upgrade-card.boss-reward {
+      border-color: var(--gold);
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.35);
+    }
+    .upgrade-card.boss-reward:hover, .upgrade-card.boss-reward:active {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.55);
     }
     .card-icon {
       width: 40px;
@@ -712,7 +720,7 @@
       <!-- 右上角極簡版本號標籤與靜音按鈕 -->
       <div style="position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 18px), 18px); display: flex; align-items: center; gap: 8px; z-index: 3;">
         <button id="btn-home-mute" class="hud-btn" style="border-radius: 999px; min-height: 34px; padding: 6px 14px; font-size: 13px; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35);" title="切換靜音" aria-label="切換靜音">🔊 音效開</button>
-        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.24</div>
+        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.25</div>
       </div>
 
       <div class="home-header">
@@ -735,7 +743,7 @@
 
     <!-- 升級彈窗 -->
     <div id="upgrade-modal" class="upgrade-modal">
-      <div class="upgrade-title">選擇時空突破天賦</div>
+      <div id="upgrade-title" class="upgrade-title">選擇時空突破天賦</div>
       <div id="card-list" class="card-list"></div>
     </div>
 
@@ -1856,25 +1864,74 @@
       }
     ];
 
-    let pendingLevelUps = 0;
+    // Boss 專屬戰利品：擊殺 Boss 必定跳出的高倍率強化，跟一般升級池分開
+    const BOSS_UPGRADES = [
+      {
+        id: 'boss_overload_core',
+        title: '時間過載核心',
+        desc: '【Boss 戰利品】主武器與副武器傷害同時 +40%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" fill="rgba(250, 204, 21, 0.2)" />
+          <path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke-width="2.5" />
+        </svg>`,
+        apply: () => {
+          player.mainDmg = Math.round(player.mainDmg * 1.4);
+          player.subDmg = Math.round(player.subDmg * 1.4);
+        }
+      },
+      {
+        id: 'boss_echo_surge',
+        title: '多維殘影湧現',
+        desc: '【Boss 戰利品】殘像上限與回溯充能上限各 +2，並立即回滿充能',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="3" fill="rgba(250, 204, 21, 0.4)" />
+          <circle cx="5" cy="18" r="3" fill="rgba(250, 204, 21, 0.4)" />
+          <circle cx="19" cy="18" r="3" fill="rgba(250, 204, 21, 0.4)" />
+          <polygon points="12,5 5,18 19,18" stroke="#facc15" stroke-width="1.5" stroke-dasharray="3 2" />
+        </svg>`,
+        apply: () => {
+          player.maxEchoCount += 2;
+          player.maxEchoCharges += 2;
+          player.echoCharges = player.maxEchoCharges;
+        }
+      },
+      {
+        id: 'boss_absolute_barrier',
+        title: '絕對護體立場',
+        desc: '【Boss 戰利品】生命上限 +60 並立即回滿血量',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="3" width="6" height="18" rx="2" fill="rgba(250, 204, 21, 0.3)" />
+          <rect x="3" y="9" width="18" height="6" rx="2" fill="rgba(250, 204, 21, 0.3)" />
+        </svg>`,
+        apply: () => {
+          player.maxHp += 60;
+          player.hp = player.maxHp;
+        }
+      }
+    ];
 
-    function showUpgradeModal() {
+    let pendingModals = [];
+
+    function showUpgradeModal(pool = UPGRADES) {
       const modal = document.getElementById('upgrade-modal');
       // 同一幀內連續升級時排隊，避免後一次呼叫直接洗掉前一次已顯示的卡片
       if (modal.classList.contains('active')) {
-        pendingLevelUps++;
+        pendingModals.push(pool);
         return;
       }
 
+      const isBossReward = pool === BOSS_UPGRADES;
       STATE.isPaused = true;
+      const title = document.getElementById('upgrade-title');
+      title.textContent = isBossReward ? 'BOSS 戰利品：選擇一項強化' : '選擇時空突破天賦';
       const list = document.getElementById('card-list');
       list.innerHTML = '';
 
-      const shuffled = [...UPGRADES].sort(() => 0.5 - Math.random()).slice(0, 3);
+      const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 3);
       let hasSelected = false;
       shuffled.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'upgrade-card';
+        card.className = isBossReward ? 'upgrade-card boss-reward' : 'upgrade-card';
         card.innerHTML = `
           <div class="card-icon">${item.icon}</div>
           <div class="card-info">
@@ -1893,9 +1950,8 @@
           AudioEngine.init();
           item.apply();
           modal.classList.remove('active');
-          if (pendingLevelUps > 0) {
-            pendingLevelUps--;
-            showUpgradeModal();
+          if (pendingModals.length > 0) {
+            showUpgradeModal(pendingModals.shift());
           } else {
             STATE.isPaused = false;
           }
@@ -2789,6 +2845,7 @@
               gems.push({ x: e.x + (Math.random() - 0.5) * 40, y: e.y + (Math.random() - 0.5) * 40, exp: 5 });
             }
             popups.push({ x: e.x, y: e.y - 20, text: 'BOSS DEFEATED', life: 40, color: '#facc15' });
+            showUpgradeModal(BOSS_UPGRADES);
           } else {
             gems.push({ x: e.x, y: e.y, exp: 2 });
           }
