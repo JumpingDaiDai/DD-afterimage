@@ -1802,6 +1802,12 @@
         apply: () => {
           player.subCount++;
           player.subAttackCd = 0; // 立即重置副武器 CD
+          // [BUG-HUNT] 追蹤「選完副武器主武器偶爾停火」用，抓到之後這段連同下面的停火監控一起移除
+          console.log('[SUB-UNLOCK]', JSON.stringify({
+            subCount: player.subCount, enemiesLen: enemies.length, frameCount,
+            attackCd: player.attackCd, attackSpeed: player.attackSpeed, mainCount: player.mainCount,
+            facingAngle: player.facingAngle, gameMode: STATE.gameMode
+          }));
         }
       },
       {
@@ -1971,6 +1977,9 @@
 
     // --- 遊戲主循環 ---
     let frameCount = 0;
+    // [BUG-HUNT] 主武器停火監控用，抓到之後連同上面 sub_unlock 的 log 一起移除
+    let lastMainFireFrame = 0;
+    let mainStallWarned = false;
     function update() {
       if (!STATE.isStarted || STATE.isPaused || STATE.isGameOver) return;
       frameCount++;
@@ -2103,6 +2112,21 @@
         }
         try { AudioEngine.playLaser(); } catch (e) {}
         player.attackCd = Math.max(1, player.attackSpeed);
+        lastMainFireFrame = frameCount;
+        mainStallWarned = false;
+      }
+
+      // [BUG-HUNT] 主武器超過正常週期還沒開火就回報一次完整 state，抓到之後移除
+      if (!mainStallWarned && frameCount - lastMainFireFrame > player.attackSpeed * 4 + 120) {
+        mainStallWarned = true;
+        console.warn('[MAIN-STALL]', JSON.stringify({
+          frameCount, lastMainFireFrame, gap: frameCount - lastMainFireFrame,
+          attackCd: player.attackCd, attackSpeed: player.attackSpeed,
+          mainCount: player.mainCount, mainDmg: player.mainDmg,
+          subCount: player.subCount, facingAngle: player.facingAngle,
+          enemiesLen: enemies.length, isPaused: STATE.isPaused, gameMode: STATE.gameMode,
+          px: player.x, py: player.y
+        }));
       }
 
       // 2.5 副武器發射：自動尋標量子飛彈 (粉紫量子火箭，極速連發佇列機制)
