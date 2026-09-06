@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.25</title>
+  <title>AFTERIMAGE v0.0.26</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -720,7 +720,7 @@
       <!-- 右上角極簡版本號標籤與靜音按鈕 -->
       <div style="position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 18px), 18px); display: flex; align-items: center; gap: 8px; z-index: 3;">
         <button id="btn-home-mute" class="hud-btn" style="border-radius: 999px; min-height: 34px; padding: 6px 14px; font-size: 13px; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35);" title="切換靜音" aria-label="切換靜音">🔊 音效開</button>
-        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.25</div>
+        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.26</div>
       </div>
 
       <div class="home-header">
@@ -1237,6 +1237,7 @@
       echoChargeTimer: 0,
       maxEchoChargeCd: 150, // 2.5 秒恢復 1 點充能
       maxEchoCount: 2, // 同時在場最大殘像數
+      echoStandDuration: 180, // 殘像走完軌跡後的駐留時間上限 (幀，3 秒)
       history: [],
       maxHistory: 180,
       resonanceDmg: 1.8, // 基礎共振每幀 1.8 點 (結界內部暴擊 3.6 點 / 216 DPS)
@@ -1550,7 +1551,7 @@
         x: player.x,
         y: player.y,
         isFinished: false,
-        standTimer: 180, // 走完後原地駐留 3 秒 (180 幀)
+        standTimer: player.echoStandDuration, // 走完後原地駐留時間 (預設 180 幀 / 3 秒)
         shootCd: 0
       });
 
@@ -1602,7 +1603,7 @@
 
       // 基礎換位 20 幀無敵，若解鎖「相位虛化」則提升至 60 幀 (1秒) 並賦予極速移動
       if (player.phaseShift > 0) {
-        player.invulnerable = 60;
+        player.invulnerable = 60 + (player.phaseInvulnBonus || 0);
         player.speedBuffTimer = 120; // 2 秒極速
         popups.push({ x: player.x, y: player.y - 14, text: 'PHASE SHIFT', life: 25, color: '#38bdf8' });
       } else {
@@ -1613,7 +1614,7 @@
       if (player.phantomSlash > 0) {
         AudioEngine.playSlash();
         STATE.shake = 18; // 巨幅時空震屏
-        const slashDmg = 120 * player.phantomSlash;
+        const slashDmg = 120 * player.phantomSlash * (player.phantomSlashDmgMult || 1);
         let slashedCount = 0;
 
         // 1. 記錄時空居合刀光裂隙 (白熾居合主光刃 + 金粉能量流光)
@@ -1882,7 +1883,7 @@
       {
         id: 'boss_echo_surge',
         title: '多維殘影湧現',
-        desc: '【Boss 戰利品】殘像上限與回溯充能上限各 +2，並立即回滿充能',
+        desc: '【Boss 戰利品】殘像駐留時間上限 +120 幀 (額外 2 秒)、回溯充能上限 +3，充能恢復時間縮短 25%，並立即回滿充能',
         icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="5" r="3" fill="rgba(250, 204, 21, 0.4)" />
           <circle cx="5" cy="18" r="3" fill="rgba(250, 204, 21, 0.4)" />
@@ -1890,8 +1891,9 @@
           <polygon points="12,5 5,18 19,18" stroke="#facc15" stroke-width="1.5" stroke-dasharray="3 2" />
         </svg>`,
         apply: () => {
-          player.maxEchoCount += 2;
-          player.maxEchoCharges += 2;
+          player.echoStandDuration += 120;
+          player.maxEchoCharges += 3;
+          player.maxEchoChargeCd = Math.max(60, Math.floor(player.maxEchoChargeCd * 0.75));
           player.echoCharges = player.maxEchoCharges;
         }
       },
@@ -1906,6 +1908,33 @@
         apply: () => {
           player.maxHp += 60;
           player.hp = player.maxHp;
+        }
+      },
+      {
+        id: 'boss_phantom_execution',
+        title: '居合天誅',
+        desc: '【Boss 戰利品】解鎖／強化量子居合斬，單次居合傷害 +80%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="20" x2="20" y2="4" stroke="#facc15" stroke-width="3" />
+          <polyline points="14 4 20 4 20 10" />
+          <line x1="8" y1="12" x2="16" y2="20" stroke="#facc15" stroke-dasharray="2 2" />
+        </svg>`,
+        apply: () => {
+          if (player.phantomSlash <= 0) player.phantomSlash = 1;
+          player.phantomSlashDmgMult = (player.phantomSlashDmgMult || 1) * 1.8;
+        }
+      },
+      {
+        id: 'boss_phase_eternal',
+        title: '相位永恆',
+        desc: '【Boss 戰利品】解鎖／強化相位虛化，換位無敵延長至 1.5 秒，極速移動加成再 +20%',
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(250, 204, 21, 0.3)" />
+        </svg>`,
+        apply: () => {
+          if (player.phaseShift <= 0) player.phaseShift = 1;
+          player.phaseInvulnBonus = (player.phaseInvulnBonus || 0) + 30;
+          player.phaseSpeedBonus = (player.phaseSpeedBonus || 0) + 0.2;
         }
       }
     ];
@@ -1978,7 +2007,7 @@
       if (player.speedBuffTimer > 0) player.speedBuffTimer--;
       if (player.deathDefianceCd > 0) player.deathDefianceCd--;
 
-      const currentSpeed = player.speedBuffTimer > 0 ? player.speed * 1.4 : player.speed;
+      const currentSpeed = player.speedBuffTimer > 0 ? player.speed * (1.4 + (player.phaseSpeedBonus || 0)) : player.speed;
 
       // 1. 移動計算 (放手時即原地停下)
       let moveX = 0, moveY = 0;
