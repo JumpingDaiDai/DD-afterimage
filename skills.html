@@ -299,7 +299,7 @@
 
   <div class="container">
     <header>
-      <div class="badge">SYSTEM MANUAL v0.0.21</div>
+      <div class="badge">SYSTEM MANUAL v0.0.28-dev</div>
       <h1>AFTERIMAGE 技能與機制總表</h1>
       <p class="sub-title">喚醒過去的自己，一人成軍。全機制數據規格、主動技能、天賦分支與時空幾何運算指南。</p>
       <div class="nav-actions">
@@ -871,6 +871,138 @@
         <div class="stat-list">
           <div class="stat-item"><span class="stat-name">救命回血量</span><span class="stat-val pink">50 HP + 1 秒無敵</span></div>
           <div class="stat-item"><span class="stat-name">被動冷卻時間</span><span class="stat-val">60 秒 (3600 幀)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.5 BOSS 專屬戰利品池 -->
+    <div class="section-title">
+      <span class="icon-tag tag-gold">BOSS LOOT</span>
+      BOSS 專屬戰利品 (Boss Exclusive Loot)
+    </div>
+    <p style="color: var(--text-dim, #94a3b8); font-size: 13px; margin: -12px 0 16px;">擊敗重裝泰坦 Boss 後跳出的三選一強化，跟一般升級天賦池分開抽選，強度倍率明顯更高。</p>
+    <div class="grid">
+      <!-- Boss 戰利品 1：時空過載核心 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(250, 204, 21, 0.25)"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">時空過載核心</div>
+                <span class="card-type-badge type-mechanic">BOSS 戰利品</span>
+              </div>
+              <div class="card-subtitle">ID: boss_overload_core</div>
+            </div>
+          </div>
+          <div class="card-desc">主武器與副武器傷害同時提升 <strong>40%</strong>，是本池中最直接的輸出強化。</div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">主武器傷害</span><span class="stat-val gold">×1.4</span></div>
+          <div class="stat-item"><span class="stat-name">副武器傷害</span><span class="stat-val gold">×1.4</span></div>
+        </div>
+      </div>
+
+      <!-- Boss 戰利品 2：多維殘影湧現 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(250, 204, 21, 0.25)"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">多維殘影湧現</div>
+                <span class="card-type-badge type-mechanic">BOSS 戰利品</span>
+              </div>
+              <div class="card-subtitle">ID: boss_echo_surge</div>
+            </div>
+          </div>
+          <div class="card-desc">殘像走完軌跡後的原地駐留時間 <strong>+120 幀（+2 秒）</strong>，大幅延長多重鏡像結界的覆蓋時間。</div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">殘像駐留時間</span><span class="stat-val gold">+120 幀</span></div>
+        </div>
+      </div>
+
+      <!-- Boss 戰利品 3：絕對護體立場 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(250, 204, 21, 0.25)"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">絕對護體立場</div>
+                <span class="card-type-badge type-mechanic">BOSS 戰利品</span>
+              </div>
+              <div class="card-subtitle">ID: boss_absolute_barrier</div>
+            </div>
+          </div>
+          <div class="card-desc">生命上限 <strong>+60</strong>，並立即回滿至新的上限，等同一次性大量治療。</div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">生命上限</span><span class="stat-val gold">+60</span></div>
+          <div class="stat-item"><span class="stat-name">立即回復</span><span class="stat-val gold">全滿</span></div>
+        </div>
+      </div>
+
+      <!-- Boss 戰利品 4：居合天誅 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(250, 204, 21, 0.25)"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">居合天誅</div>
+                <span class="card-type-badge type-mechanic">BOSS 戰利品</span>
+              </div>
+              <div class="card-subtitle">ID: boss_phantom_execution</div>
+            </div>
+          </div>
+          <div class="card-desc">尚未擁有「量子居合斬」時直接解鎖；已擁有者單次居合傷害倍率再提升 <strong>80%</strong>。</div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">未擁有時</span><span class="stat-val gold">直接解鎖</span></div>
+          <div class="stat-item"><span class="stat-name">已擁有時</span><span class="stat-val gold">傷害倍率 ×1.8</span></div>
+        </div>
+      </div>
+
+      <!-- Boss 戰利品 5：相位永恆 -->
+      <div class="skill-card">
+        <div>
+          <div class="card-top">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(250, 204, 21, 0.25)"></path>
+              </svg>
+            </div>
+            <div class="card-header-info">
+              <div class="card-title-row">
+                <div class="card-title">相位永恆</div>
+                <span class="card-type-badge type-mechanic">BOSS 戰利品</span>
+              </div>
+              <div class="card-subtitle">ID: boss_phase_eternal</div>
+            </div>
+          </div>
+          <div class="card-desc">尚未擁有「相位虛化」時直接解鎖；已擁有者換位無敵時間再 <strong>+0.5 秒</strong>，極速移動加成再 <strong>+20%</strong>。</div>
+        </div>
+        <div class="stat-list">
+          <div class="stat-item"><span class="stat-name">未擁有時</span><span class="stat-val gold">直接解鎖</span></div>
+          <div class="stat-item"><span class="stat-name">已擁有時</span><span class="stat-val gold">無敵 +0.5s／移速 +20%</span></div>
         </div>
       </div>
     </div>

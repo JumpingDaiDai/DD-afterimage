@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#070913">
   <link rel="manifest" href="manifest.json">
-  <title>AFTERIMAGE v0.0.27</title>
+  <title>AFTERIMAGE v0.0.28-dev</title>
   <!-- 引入 Google Fonts: Syne (純英文字標) & Orbitron (科技副標/UI) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -644,6 +644,159 @@
       max-width: 260px;
       line-height: 1.5;
     }
+
+    /* 設定 / 暫停彈窗 */
+    .settings-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 9, 19, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 205;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      pointer-events: auto;
+    }
+    .settings-modal.active { display: flex; }
+    .settings-box {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
+      border-radius: 20px;
+      padding: 24px;
+      width: 90%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 0 32px rgba(56, 189, 248, 0.2);
+    }
+    .settings-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: 18px;
+    }
+    .settings-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 18px;
+    }
+    .btn-setting {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .btn-setting:active { transform: scale(0.97); background: #243248; }
+    .btn-setting.btn-warning { border-color: rgba(250, 204, 21, 0.5); }
+    .btn-setting.btn-danger { border-color: rgba(239, 68, 68, 0.5); color: #fda4af; }
+
+    /* 首頁最高分卡片與排行榜面板 */
+    .home-best-score-card {
+      position: relative;
+      z-index: 2;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 16px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 260px;
+    }
+    .best-score-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 13px;
+      font-weight: 700;
+      color: #cbd5e1;
+      gap: 16px;
+    }
+    .best-score-row span:last-child {
+      color: var(--gold);
+      font-family: monospace;
+      font-weight: 900;
+    }
+    .leaderboard-panel {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 12px;
+    }
+    .leaderboard-panel.hidden { display: none; }
+    .leaderboard-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .lb-tab {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 4px;
+      cursor: pointer;
+    }
+    .lb-tab.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .leaderboard-list {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .leaderboard-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+    .leaderboard-row.top-rank {
+      border-color: rgba(250, 204, 21, 0.5);
+      background: rgba(250, 204, 21, 0.08);
+    }
+    .rank-badge { width: 22px; flex-shrink: 0; text-align: center; }
+    .rank-info { flex: 1; color: #94a3b8; text-align: left; }
+    .rank-score { color: var(--gold); font-family: monospace; font-weight: 900; }
+    .no-records { font-size: 12px; color: #64748b; padding: 10px; }
+
+    /* 結算畫面：排名/新紀錄回饋 */
+    .final-rank-banner {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--gold);
+      margin-bottom: 16px;
+      text-align: center;
+      min-height: 18px;
+    }
   </style>
 </head>
 <body>
@@ -680,9 +833,11 @@
       </div>
       <div class="hud-right">
         <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+          <div class="score-text" id="wave-label">WAVE <span id="wave-count">1</span></div>
           <div class="score-text" id="hud-score-label">KILLS <span id="kill-count">0</span></div>
           <button id="btn-mute" class="hud-btn" title="切換靜音" aria-label="切換靜音">🔊</button>
           <button id="btn-fullscreen" class="hud-btn" title="全螢幕" aria-label="全螢幕">[ ]</button>
+          <button id="btn-settings" class="hud-btn" title="設定" aria-label="設定">⚙️</button>
         </div>
         <div class="timer-text" id="time-display">00:00</div>
       </div>
@@ -720,7 +875,7 @@
       <!-- 右上角極簡版本號標籤與靜音按鈕 -->
       <div style="position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 18px), 18px); display: flex; align-items: center; gap: 8px; z-index: 3;">
         <button id="btn-home-mute" class="hud-btn" style="border-radius: 999px; min-height: 34px; padding: 6px 14px; font-size: 13px; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35);" title="切換靜音" aria-label="切換靜音">🔊 音效開</button>
-        <div class="version-tag-corner" style="position: static;">RELEASE v0.0.27</div>
+        <div class="version-tag-corner" style="position: static;">🛠️ 開發版 v0.0.28-dev</div>
       </div>
 
       <div class="home-header">
@@ -728,6 +883,24 @@
           <h1 class="game-logo-main">AFTERIMAGE</h1>
         </div>
         <div class="game-subtitle">REWIND THE TIMELINE × ECHO SYNERGY × CONVEX RESONANCE</div>
+      </div>
+      <div class="home-best-score-card" id="home-best-score-card">
+        <div class="best-score-row">
+          <span>🏆 生存最高分</span>
+          <span id="home-best-survival">0</span>
+        </div>
+        <div class="best-score-row">
+          <span>🎯 對決最佳連勝</span>
+          <span id="home-best-duel">0</span>
+        </div>
+        <button id="btn-toggle-leaderboard" class="home-link-btn" style="margin-top: 8px;">📜 查看排行榜</button>
+        <div id="leaderboard-panel" class="leaderboard-panel hidden">
+          <div class="leaderboard-tabs">
+            <button id="lb-tab-survival" class="lb-tab active">生存模式</button>
+            <button id="lb-tab-duel" class="lb-tab">1V1 對決</button>
+          </div>
+          <div id="leaderboard-list" class="leaderboard-list"></div>
+        </div>
       </div>
       <div class="home-center" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
         <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
@@ -760,8 +933,39 @@
             <span class="stat-label">消滅異變體</span>
             <span id="final-kills" class="stat-val gold">0</span>
           </div>
+          <div class="stat-card" id="final-wave-card">
+            <span class="stat-label">存活波次</span>
+            <span id="final-wave" class="stat-val cyan">1</span>
+          </div>
         </div>
+        <div id="final-rank-banner" class="final-rank-banner"></div>
         <button class="btn-restart" onclick="location.reload()">重啟時間線</button>
+      </div>
+    </div>
+
+    <!-- 設定 / 暫停彈窗 -->
+    <div id="settings-modal" class="settings-modal">
+      <div class="settings-box">
+        <h2 class="settings-title">⚙️ 遊戲設定</h2>
+        <div class="settings-options">
+          <button id="settings-sound-btn" class="btn-setting">
+            <span id="settings-sound-icon">🔊</span>
+            <span id="settings-sound-text">音效：開啟</span>
+          </button>
+          <button id="settings-fullscreen-btn" class="btn-setting">
+            <span>⛶</span>
+            <span>切換全螢幕</span>
+          </button>
+          <button id="settings-restart-btn" class="btn-setting btn-warning">
+            <span>🔄</span>
+            <span>重新開始本局</span>
+          </button>
+          <button id="settings-quit-btn" class="btn-setting btn-danger">
+            <span>🏠</span>
+            <span>離開並回主畫面</span>
+          </button>
+        </div>
+        <button id="settings-resume-btn" class="btn-restart">▶ 繼續遊戲</button>
       </div>
     </div>
   </div>
@@ -782,11 +986,172 @@
       gameMode: 'survival', // 'survival' (無盡生存) 或 'duel' (1v1 鏡像死鬥)
       gameTime: 0,
       kills: 0,
+      bossKillCount: 0,
+      wave: 1,
       level: 1,
       exp: 0,
       maxExp: 8,
       shake: 0
     };
+
+    // --- 存檔與排行榜系統 (SaveManager / Leaderboard) ---
+    class SaveManager {
+      constructor(namespace = 'dd_afterimage') {
+        this.ns = namespace;
+        this.memoryFallback = {};
+        this.isStorageAvailable = this.testStorage();
+      }
+      testStorage() {
+        try {
+          const testKey = `__test__${Date.now()}`;
+          localStorage.setItem(testKey, '1');
+          localStorage.removeItem(testKey);
+          return true;
+        } catch (e) {
+          console.warn('LocalStorage 不可用（可能處於無痕模式或配額已滿），切換至記憶體存儲模式');
+          return false;
+        }
+      }
+      getItem(key, defaultValue = null) {
+        const fullKey = `${this.ns}_${key}`;
+        try {
+          if (this.isStorageAvailable) {
+            const val = localStorage.getItem(fullKey);
+            return val !== null ? JSON.parse(val) : defaultValue;
+          }
+          return this.memoryFallback[fullKey] ?? defaultValue;
+        } catch (e) {
+          console.error(`讀取存檔失敗 [${key}]:`, e);
+          return defaultValue;
+        }
+      }
+      setItem(key, value) {
+        const fullKey = `${this.ns}_${key}`;
+        try {
+          const serialized = JSON.stringify(value);
+          if (this.isStorageAvailable) {
+            localStorage.setItem(fullKey, serialized);
+          }
+          this.memoryFallback[fullKey] = value;
+          return true;
+        } catch (e) {
+          console.error(`寫入存檔失敗 [${key}]:`, e);
+          this.memoryFallback[fullKey] = value;
+          return false;
+        }
+      }
+    }
+
+    class Leaderboard {
+      constructor(saveManager, storageKey, maxEntries = 10) {
+        this.sm = saveManager;
+        this.key = storageKey;
+        this.maxEntries = maxEntries;
+      }
+      getScores() {
+        return this.sm.getItem(this.key, []);
+      }
+      getBestScore() {
+        const scores = this.getScores();
+        return scores.length > 0 ? scores[0].score : 0;
+      }
+      submitScore(score, extraInfo = {}) {
+        if (score <= 0) return { rank: -1, isNewBest: false };
+        const scores = this.getScores();
+        const isNewBest = scores.length === 0 || score > scores[0].score;
+        const newEntry = Object.assign({
+          score,
+          date: new Date().toISOString().split('T')[0],
+          timestamp: Date.now()
+        }, extraInfo);
+        scores.push(newEntry);
+        scores.sort((a, b) => b.score - a.score);
+        const trimmed = scores.slice(0, this.maxEntries);
+        this.sm.setItem(this.key, trimmed);
+        const rank = trimmed.findIndex(e => e.timestamp === newEntry.timestamp) + 1;
+        return { rank: rank > 0 ? rank : -1, isNewBest };
+      }
+      renderTo(containerElement, formatRow) {
+        if (!containerElement) return;
+        const scores = this.getScores();
+        if (scores.length === 0) {
+          containerElement.innerHTML = '<div class="no-records">尚未有歷史紀錄，快去挑戰吧！</div>';
+          return;
+        }
+        containerElement.innerHTML = scores.map((item, idx) => {
+          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+          return `
+            <div class="leaderboard-row ${idx === 0 ? 'top-rank' : ''}">
+              <span class="rank-badge">${medal}</span>
+              <span class="rank-info">${formatRow ? formatRow(item) : item.date}</span>
+              <span class="rank-score">⭐ ${item.score}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    const saveManager = new SaveManager('dd_afterimage');
+    const CURRENT_SAVE_VERSION = 1;
+    function loadSaveData() {
+      const data = saveManager.getItem('save_data', null);
+      if (!data) {
+        return { version: CURRENT_SAVE_VERSION, stats: { totalRuns: 0, totalKills: 0, totalBossKills: 0 }, duelStreak: 0 };
+      }
+      data.stats = data.stats || { totalRuns: 0, totalKills: 0, totalBossKills: 0 };
+      if (typeof data.duelStreak !== 'number') data.duelStreak = 0;
+      data.version = CURRENT_SAVE_VERSION;
+      return data;
+    }
+    const saveData = loadSaveData();
+    const leaderboards = {
+      survival: new Leaderboard(saveManager, 'survival_leaderboard', 10),
+      duel: new Leaderboard(saveManager, 'duel_leaderboard', 10)
+    };
+
+    // 首頁最高分卡片 + 排行榜面板渲染
+    function renderHomeBestScores() {
+      const bestSurvivalEl = document.getElementById('home-best-survival');
+      const bestDuelEl = document.getElementById('home-best-duel');
+      if (bestSurvivalEl) bestSurvivalEl.innerText = leaderboards.survival.getBestScore();
+      if (bestDuelEl) bestDuelEl.innerText = leaderboards.duel.getBestScore();
+    }
+    renderHomeBestScores();
+
+    let activeLbTab = 'survival';
+    function renderLeaderboardPanel() {
+      const listEl = document.getElementById('leaderboard-list');
+      const board = leaderboards[activeLbTab];
+      if (activeLbTab === 'survival') {
+        board.renderTo(listEl, item => `第${item.wave || 1}波 · ${item.kills || 0}擊殺 · ${item.date}`);
+      } else {
+        board.renderTo(listEl, item => `${item.result === 'win' ? '✅ 勝利' : '❌ 落敗'} · ${item.date}`);
+      }
+    }
+    const lbToggleBtn = document.getElementById('btn-toggle-leaderboard');
+    const lbPanel = document.getElementById('leaderboard-panel');
+    if (lbToggleBtn && lbPanel) {
+      lbToggleBtn.addEventListener('click', () => {
+        lbPanel.classList.toggle('hidden');
+        if (!lbPanel.classList.contains('hidden')) renderLeaderboardPanel();
+      });
+    }
+    const lbTabSurvival = document.getElementById('lb-tab-survival');
+    const lbTabDuel = document.getElementById('lb-tab-duel');
+    if (lbTabSurvival && lbTabDuel) {
+      lbTabSurvival.addEventListener('click', () => {
+        activeLbTab = 'survival';
+        lbTabSurvival.classList.add('active');
+        lbTabDuel.classList.remove('active');
+        renderLeaderboardPanel();
+      });
+      lbTabDuel.addEventListener('click', () => {
+        activeLbTab = 'duel';
+        lbTabDuel.classList.add('active');
+        lbTabSurvival.classList.remove('active');
+        renderLeaderboardPanel();
+      });
+    }
 
     // --- 離線 500 世代大規模演化訓練之【三階神經網絡大腦權重集合】(Inlined Trained Models Bundle) ---
     const AI_MODELS = {
@@ -1191,8 +1556,7 @@
       if (e.cancelable) e.preventDefault();
     }, { passive: false });
 
-    document.getElementById('btn-fullscreen').addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
+    function toggleFullscreen() {
       if (!document.fullscreenElement) {
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => {});
@@ -1206,6 +1570,56 @@
           document.webkitExitFullscreen();
         }
       }
+    }
+    document.getElementById('btn-fullscreen').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      toggleFullscreen();
+    });
+
+    // --- 設定 / 暫停畫面 ---
+    const settingsModal = document.getElementById('settings-modal');
+    const btnSettings = document.getElementById('btn-settings');
+    const settingsSoundText = document.getElementById('settings-sound-text');
+    const settingsSoundIcon = document.getElementById('settings-sound-icon');
+    function updateSettingsSoundUI() {
+      if (settingsSoundText) settingsSoundText.innerText = `音效：${AudioEngine.enabled ? '開啟' : '關閉'}`;
+      if (settingsSoundIcon) settingsSoundIcon.innerText = AudioEngine.enabled ? '🔊' : '🔇';
+    }
+    function openSettings() {
+      if (!STATE.isStarted || STATE.isGameOver) return;
+      if (document.getElementById('upgrade-modal').classList.contains('active')) return;
+      STATE.isPaused = true;
+      updateSettingsSoundUI();
+      settingsModal.classList.add('active');
+    }
+    function closeSettings() {
+      STATE.isPaused = false;
+      settingsModal.classList.remove('active');
+    }
+    if (btnSettings) {
+      btnSettings.addEventListener('pointerdown', (e) => { e.stopPropagation(); openSettings(); });
+    }
+    document.getElementById('settings-resume-btn').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      closeSettings();
+    });
+    document.getElementById('settings-sound-btn').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      AudioEngine.init();
+      AudioEngine.toggleMute();
+      updateSettingsSoundUI();
+    });
+    document.getElementById('settings-fullscreen-btn').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      toggleFullscreen();
+    });
+    document.getElementById('settings-restart-btn').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      location.reload();
+    });
+    document.getElementById('settings-quit-btn').addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      location.reload();
     });
 
     // 玩家配置 (半徑由 16px 縮減至 10px，視野擴大 2.5 倍)
@@ -1460,6 +1874,7 @@
         duelHud.style.display = 'flex';
         expContainer.style.display = 'none';
         document.getElementById('hud-score-label').style.display = 'none';
+        document.getElementById('wave-label').style.display = 'none';
 
         // 玩家站位偏左，AI 站位偏右
         player.x = width * 0.25;
@@ -1499,6 +1914,7 @@
         duelHud.style.display = 'none';
         expContainer.style.display = 'flex';
         document.getElementById('hud-score-label').style.display = 'block';
+        document.getElementById('wave-label').style.display = 'block';
       }
 
       // 嘗試進入 Fullscreen
@@ -2692,6 +3108,7 @@
 
       } else {
         // --- 經典生存怪群生成 ---
+        STATE.wave = Math.floor(STATE.gameTime / 2700) + 1;
         const isBossTime = STATE.gameTime > 0 && STATE.gameTime % 2700 === 0;
         if (isBossTime) {
           spawnBoss();
@@ -2867,6 +3284,7 @@
           if (e.isBoss) {
             // Boss 死亡掉落大量經驗晶體與劇烈震動
             STATE.shake = 16;
+            STATE.bossKillCount++;
             for (let g = 0; g < 12; g++) {
               gems.push({ x: e.x + (Math.random() - 0.5) * 40, y: e.y + (Math.random() - 0.5) * 40, exp: 5 });
             }
@@ -2938,6 +3356,8 @@
       document.getElementById('exp-bar').style.width = `${(STATE.exp / STATE.maxExp) * 100}%`;
       document.getElementById('level-num').innerText = STATE.level;
       document.getElementById('kill-count').innerText = STATE.kills;
+      const waveCountEl = document.getElementById('wave-count');
+      if (waveCountEl) waveCountEl.innerText = STATE.wave;
 
       const sec = Math.floor(STATE.gameTime / 60);
       const mm = String(Math.floor(sec / 60)).padStart(2, '0');
@@ -3030,6 +3450,7 @@
     function spawnBoss() {
       AudioEngine.playBossSpawn();
       STATE.shake = 12;
+      popups.push({ x: width / 2, y: height / 2 - 80, text: `WAVE ${STATE.wave} 開始`, life: 50, color: '#38bdf8' });
       popups.push({ x: width / 2, y: height / 2 - 50, text: 'BOSS INCOMING', life: 50, color: '#ef4444' });
 
       enemies.push({
@@ -3672,21 +4093,49 @@
       document.getElementById('final-time').innerText = `${mm}:${ss}`;
 
       const titleEl = modal.querySelector('.gameover-title');
+      const rankBanner = document.getElementById('final-rank-banner');
+      const waveCard = document.getElementById('final-wave-card');
+
+      saveData.stats.totalRuns++;
+      saveData.stats.totalKills += STATE.kills;
+      saveData.stats.totalBossKills += STATE.bossKillCount;
+
       if (STATE.gameMode === 'duel') {
+        waveCard.style.display = 'none';
         if (isVictory) {
           titleEl.innerText = 'VICTORY - 時空支配者';
           titleEl.style.color = '#facc15';
           document.getElementById('final-kills').innerText = 'AI DEFEATED';
+          saveData.duelStreak = (saveData.duelStreak || 0) + 1;
+          const { rank, isNewBest } = leaderboards.duel.submitScore(saveData.duelStreak, { result: 'win' });
+          rankBanner.innerText = isNewBest
+            ? `🏆 新紀錄！最佳連勝 ${saveData.duelStreak} 場`
+            : `目前連勝 ${saveData.duelStreak} 場（第 ${rank > 0 ? rank : '-'} 名／歷史最佳 ${leaderboards.duel.getBestScore()} 場）`;
         } else {
           titleEl.innerText = 'DEFEAT - 被時空幽靈吞噬';
           titleEl.style.color = '#f43f5e';
           document.getElementById('final-kills').innerText = 'FAILED';
+          saveData.duelStreak = 0;
+          rankBanner.innerText = `連勝已中斷（歷史最佳 ${leaderboards.duel.getBestScore()} 場）`;
         }
       } else {
+        waveCard.style.display = 'flex';
         titleEl.innerText = '時空線崩塌';
         titleEl.style.color = '#38bdf8';
         document.getElementById('final-kills').innerText = STATE.kills;
+        document.getElementById('final-wave').innerText = STATE.wave;
+
+        const minutesSurvived = Math.floor(STATE.gameTime / 3600);
+        const score = STATE.kills * 10 + STATE.bossKillCount * 500 + minutesSurvived * 300;
+        const { rank, isNewBest } = leaderboards.survival.submitScore(score, {
+          wave: STATE.wave, kills: STATE.kills, survivalTime: STATE.gameTime
+        });
+        rankBanner.innerText = isNewBest
+          ? `🏆 新紀錄！本局得分 ${score}`
+          : `本局得分 ${score}（第 ${rank > 0 ? rank : '-'} 名／歷史最高 ${leaderboards.survival.getBestScore()}）`;
       }
+
+      saveManager.setItem('save_data', saveData);
       modal.classList.add('active');
     }
 
